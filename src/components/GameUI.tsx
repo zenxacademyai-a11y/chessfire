@@ -88,6 +88,7 @@ interface GameUIProps {
   onDifficultyChange: (d: AIDifficulty) => void;
   onHint: () => void;
   hintLoading: boolean;
+  onlinePlayerColor?: 'fire' | 'ice' | null;
 }
 
 export default function GameUI({

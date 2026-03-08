@@ -375,7 +375,7 @@ export default function GameUI({
 
       {/* ============ GAME OVER OVERLAY ============ */}
       {gameOver && winner && (
-        <GameOverOverlay winner={winner} checkmatedColor={checkmatedColor} onReset={onReset} playerWon={playerWon} playerLost={playerLost} gameMode={gameMode} />
+        <GameOverOverlay winner={winner} checkmatedColor={checkmatedColor} onReset={onReset} playerWon={playerWon} playerLost={playerLost} gameMode={gameMode} onRematch={onRematch} />
       )}
 
       {/* ============ OPPONENT DISCONNECTED BANNER ============ */}

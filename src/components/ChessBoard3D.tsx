@@ -1,6 +1,6 @@
 import { useRef, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { OrbitControls, ContactShadows } from '@react-three/drei';
+import { OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
 import ChessPiece3D from './ChessPiece3D';
 import AnimatingPieceComponent from './AnimatingPiece';

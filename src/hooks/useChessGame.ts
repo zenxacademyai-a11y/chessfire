@@ -95,6 +95,8 @@ export function useChessGame() {
   const [gameMode, setGameMode] = useState<GameMode>('pvai');
   const [aiDifficulty, setAiDifficulty] = useState<AIDifficulty>('medium');
   const [aiThinking, setAiThinking] = useState(false);
+  const [hintMove, setHintMove] = useState<{ from: Position; to: Position } | null>(null);
+  const [hintLoading, setHintLoading] = useState(false);
   const aiTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const setters = {

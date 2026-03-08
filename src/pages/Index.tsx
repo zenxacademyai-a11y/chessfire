@@ -13,8 +13,9 @@ const Index = () => {
     board, selectedPos, validMoves, currentTurn, capturedPieces, lastMove, moveType,
     inCheck, checkmatedColor, animatingPiece, kingInCheckPos,
     gameMode, aiThinking, lastMovedPieceType, aiDifficulty,
-    hintMove, hintLoading, moveHistory,
-    handleSquareClick, resetGame, toggleGameMode, setAiDifficulty, getHint
+    hintMove, hintLoading, moveHistory, viewingMoveIndex,
+    handleSquareClick, resetGame, toggleGameMode, setAiDifficulty, getHint,
+    undoMove, viewMove, exitReplay
   } = useChessGame();
   const { fireTime, iceTime, timedOutColor, resetClock } = useChessClock(currentTurn, checkmatedColor);
   const { playMove, playCapture, playSelect, playCheck, playCheckmate, playPieceMove, playPieceCapture, playVictory, playDefeat } = useSound();

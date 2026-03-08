@@ -44,14 +44,10 @@ const Index = () => {
   }, [toggleGameMode, resetGame, resetClock]);
 
   const handleStartOnline = useCallback((roomId: string, playerColor: 'fire' | 'ice') => {
-    // For now, just start as PvP — real-time sync will be added in next step
-    toggleGameMode('pvp');
-    resetGame();
+    startOnlineGame(roomId, playerColor);
     resetClock();
     setGameStarted(true);
-    // TODO: Wire up real-time game sync with roomId and playerColor
-    console.log('Online game started:', { roomId, playerColor });
-  }, [toggleGameMode, resetGame, resetClock]);
+  }, [startOnlineGame, resetClock]);
 
   // Move sounds
   useEffect(() => {

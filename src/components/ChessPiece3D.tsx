@@ -199,8 +199,7 @@ function PieceGeometry({ type, material }: { type: PieceType; material: THREE.Me
 
 export default function ChessPiece3D({ type, color, position, isSelected, isInCheck, onClick }: ChessPiece3DProps) {
   const groupRef = useRef<THREE.Group>(null);
-  const glowRef = useRef<THREE.PointLight>(null);
-  const checkGlowRef = useRef<THREE.PointLight>(null);
+  const needsAnimation = isSelected || isInCheck;
 
   const material = useMemo(() => {
     if (color === 'fire') {
@@ -222,25 +221,12 @@ export default function ChessPiece3D({ type, color, position, isSelected, isInCh
   }, [color, isSelected, isInCheck]);
 
   useFrame((state) => {
-    if (!groupRef.current) return;
+    if (!groupRef.current || !needsAnimation) return;
     if (isSelected) {
       groupRef.current.position.y = position[1] + Math.sin(state.clock.elapsedTime * 3) * 0.1 + 0.2;
       groupRef.current.rotation.y = state.clock.elapsedTime * 1.5;
     } else if (isInCheck) {
-      // Shake effect for king in check
-      groupRef.current.position.y = position[1];
       groupRef.current.position.x = position[0] + Math.sin(state.clock.elapsedTime * 20) * 0.03;
-      groupRef.current.rotation.y = 0;
-    } else {
-      groupRef.current.position.y = position[1];
-      groupRef.current.position.x = position[0];
-      groupRef.current.rotation.y = 0;
-    }
-    if (glowRef.current) {
-      glowRef.current.intensity = isSelected ? 2 + Math.sin(state.clock.elapsedTime * 4) : 0.5;
-    }
-    if (checkGlowRef.current && isInCheck) {
-      checkGlowRef.current.intensity = 3 + Math.sin(state.clock.elapsedTime * 6) * 2;
     }
   });
 
@@ -249,19 +235,15 @@ export default function ChessPiece3D({ type, color, position, isSelected, isInCh
   return (
     <group ref={groupRef} position={position} onClick={(e) => { e.stopPropagation(); onClick(); }}>
       <PieceGeometry type={type} material={material} />
-      <pointLight ref={glowRef} color={glowColor} intensity={0.5} distance={2} />
       {isInCheck && (
-        <>
-          <pointLight ref={checkGlowRef} color="#ff0000" intensity={3} distance={3} />
-          <mesh position={[0, 0.02, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-            <ringGeometry args={[0.3, 0.42, 32]} />
-            <meshBasicMaterial color="#ff0000" transparent opacity={0.7} side={THREE.DoubleSide} />
-          </mesh>
-        </>
+        <mesh position={[0, 0.02, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+          <ringGeometry args={[0.3, 0.42, 16]} />
+          <meshBasicMaterial color="#ff0000" transparent opacity={0.7} side={THREE.DoubleSide} />
+        </mesh>
       )}
       {isSelected && (
         <mesh position={[0, 0.02, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-          <ringGeometry args={[0.25, 0.35, 32]} />
+          <ringGeometry args={[0.25, 0.35, 16]} />
           <meshBasicMaterial color={glowColor} transparent opacity={0.6} side={THREE.DoubleSide} />
         </mesh>
       )}

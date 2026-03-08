@@ -20,7 +20,6 @@ interface ChessBoard3DProps {
 function BoardSquare({ row, col, isLight, isSelected, isValidMove, isKingInCheck, isHintFrom, isHintTo, onClick }: {
   row: number; col: number; isLight: boolean; isSelected: boolean; isValidMove: boolean; isKingInCheck: boolean; isHintFrom: boolean; isHintTo: boolean; onClick: () => void;
 }) {
-  const meshRef = useRef<THREE.Mesh>(null);
   const x = col - 3.5;
   const z = row - 3.5;
 
@@ -52,22 +51,8 @@ function BoardSquare({ row, col, isLight, isSelected, isValidMove, isKingInCheck
     emissiveIntensity = 0.2;
   }
 
-  useFrame((state) => {
-    if (!meshRef.current) return;
-    const mat = meshRef.current.material as THREE.MeshStandardMaterial;
-    if (isValidMove) {
-      mat.emissiveIntensity = 0.2 + Math.sin(state.clock.elapsedTime * 3) * 0.15;
-    }
-    if (isKingInCheck) {
-      mat.emissiveIntensity = 0.4 + Math.sin(state.clock.elapsedTime * 5) * 0.3;
-    }
-    if (isHintFrom || isHintTo) {
-      mat.emissiveIntensity = 0.3 + Math.sin(state.clock.elapsedTime * 4) * 0.25;
-    }
-  });
-
   return (
-    <mesh ref={meshRef} position={[x, 0, z]} onClick={(e) => { e.stopPropagation(); onClick(); }} receiveShadow>
+    <mesh position={[x, 0, z]} onClick={(e) => { e.stopPropagation(); onClick(); }} receiveShadow>
       <boxGeometry args={[1, 0.15, 1]} />
       <meshStandardMaterial
         color={color}

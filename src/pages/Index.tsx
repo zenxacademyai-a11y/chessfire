@@ -91,13 +91,13 @@ const Index = () => {
 
       {/* Undo button for PvP */}
       {gameMode === 'pvp' && !checkmatedColor && !timedOutColor && moveHistory.length > 0 && (
-        <div className="absolute left-3 bottom-24 pointer-events-auto z-20">
+        <div className="absolute left-2 md:left-3 bottom-20 md:bottom-24 pointer-events-auto z-20">
           <button
             onClick={undoMove}
-            className="glass-panel rounded-xl px-3 py-2 flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all group"
+            className="glass-panel rounded-lg md:rounded-xl px-2 md:px-3 py-1.5 md:py-2 flex items-center gap-1 md:gap-1.5 text-xs md:text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all group"
             title="Undo last move"
           >
-            <RotateCcw size={14} className="group-hover:rotate-[-180deg] transition-transform duration-500" />
+            <RotateCcw size={12} className="md:w-[14px] md:h-[14px] group-hover:rotate-[-180deg] transition-transform duration-500" />
             <span className="hidden md:inline">Undo</span>
           </button>
         </div>
@@ -105,11 +105,11 @@ const Index = () => {
 
       {/* Replay mode indicator */}
       {viewingMoveIndex !== null && (
-        <div className="absolute top-20 left-1/2 -translate-x-1/2 pointer-events-auto z-20">
-          <div className="glass-panel rounded-xl px-4 py-2 flex items-center gap-2 bg-primary/5 border-primary/20">
-            <span className="text-xs font-bold text-primary tracking-wide">📋 Viewing Move {viewingMoveIndex + 1}</span>
-            <button onClick={exitReplay} className="text-xs font-bold text-primary hover:text-primary/80 underline ml-2">
-              Return to game
+        <div className="absolute top-14 md:top-20 left-1/2 -translate-x-1/2 pointer-events-auto z-20">
+          <div className="glass-panel rounded-lg md:rounded-xl px-3 md:px-4 py-1.5 md:py-2 flex items-center gap-2 bg-primary/5 border-primary/20">
+            <span className="text-[10px] md:text-xs font-bold text-primary tracking-wide">📋 Move {viewingMoveIndex + 1}</span>
+            <button onClick={exitReplay} className="text-[10px] md:text-xs font-bold text-primary hover:text-primary/80 underline ml-1 md:ml-2">
+              Return
             </button>
           </div>
         </div>

@@ -2,8 +2,10 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { Board, Position, PieceColor, PieceType, ChessPiece, createInitialBoard, getValidMoves, movePiece, isInCheck, isCheckmate } from '@/utils/chessLogic';
 import { getBestMove } from '@/utils/chessAI';
 import { buildMoveNotation, type MoveRecord } from '@/components/MoveHistoryPanel';
+import { supabase } from '@/integrations/supabase/client';
+import type { Json } from '@/integrations/supabase/types';
 
-export type GameMode = 'pvp' | 'pvai';
+export type GameMode = 'pvp' | 'pvai' | 'online';
 export type AIDifficulty = 'easy' | 'medium' | 'hard';
 
 export interface AnimatingPiece {
@@ -26,6 +28,11 @@ export interface BoardSnapshot {
   inCheck: PieceColor | null;
   checkmatedColor: PieceColor | null;
   kingInCheckPos: Position | null;
+}
+
+interface OnlineConfig {
+  roomId: string;
+  playerColor: 'fire' | 'ice';
 }
 
 const AI_DEPTH: Record<AIDifficulty, number> = {
@@ -59,9 +66,11 @@ export function useChessGame() {
   const [moveHistory, setMoveHistory] = useState<MoveRecord[]>([]);
   const [boardHistory, setBoardHistory] = useState<BoardSnapshot[]>([]);
   const [viewingMoveIndex, setViewingMoveIndex] = useState<number | null>(null);
+  const [onlineConfig, setOnlineConfig] = useState<OnlineConfig | null>(null);
   const aiTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isApplyingRemoteMove = useRef(false);
 
-  // Refs for snapshot capture (to avoid stale closures)
+  // Refs for snapshot capture
   const boardRef = useRef(board);
   const capturedRef = useRef(capturedPieces);
   const lastMoveRef = useRef(lastMove);
@@ -86,7 +95,6 @@ export function useChessGame() {
     turn: PieceColor,
     movingPieceType: PieceType
   ) => {
-    // Save snapshot before applying
     setBoardHistory(prev => [...prev, {
       board: deepCopyBoard(boardRef.current),
       currentTurn: currentTurnRef.current,
@@ -172,12 +180,30 @@ export function useChessGame() {
     setTimeout(() => {
       applyMoveResult(newBoard, captured, from, to, turn, movingPiece.type);
     }, animDuration);
+
+    return newBoard;
   }, [applyMoveResult]);
+
+  // Push move to Supabase for online games
+  const pushMoveOnline = useCallback(async (newBoard: Board, from: Position, to: Position, nextTurn: PieceColor) => {
+    if (!onlineConfig) return;
+    
+    await supabase
+      .from('game_rooms')
+      .update({
+        board_state: newBoard as unknown as Json,
+        current_turn: nextTurn,
+        last_move: { from, to } as unknown as Json,
+      })
+      .eq('id', onlineConfig.roomId);
+  }, [onlineConfig]);
 
   const handleSquareClick = useCallback((row: number, col: number) => {
     if (animatingPiece || checkmatedColor || aiThinking) return;
     if (gameMode === 'pvai' && currentTurn === 'ice') return;
-    if (viewingMoveIndex !== null) return; // Can't move while viewing history
+    // Online: only allow moves for your color
+    if (gameMode === 'online' && onlineConfig && currentTurn !== onlineConfig.playerColor) return;
+    if (viewingMoveIndex !== null) return;
     
     const piece = board[row][col];
 
@@ -185,9 +211,15 @@ export function useChessGame() {
       const isValid = validMoves.some(m => m.row === row && m.col === col);
       
       if (isValid) {
-        executeMove(selectedPos, { row, col }, board, currentTurn);
+        const newBoard = executeMove(selectedPos, { row, col }, board, currentTurn);
         setSelectedPos(null);
         setValidMoves([]);
+        
+        // Push to Supabase if online
+        if (gameMode === 'online' && newBoard) {
+          const nextTurn: PieceColor = currentTurn === 'fire' ? 'ice' : 'fire';
+          pushMoveOnline(newBoard, selectedPos, { row, col }, nextTurn);
+        }
         return;
       }
       
@@ -206,7 +238,47 @@ export function useChessGame() {
       setSelectedPos({ row, col });
       setValidMoves(getValidMoves(board, { row, col }));
     }
-  }, [board, selectedPos, validMoves, currentTurn, animatingPiece, checkmatedColor, gameMode, aiThinking, executeMove, viewingMoveIndex]);
+  }, [board, selectedPos, validMoves, currentTurn, animatingPiece, checkmatedColor, gameMode, aiThinking, executeMove, viewingMoveIndex, onlineConfig, pushMoveOnline]);
+
+  // Listen for opponent moves in online mode
+  useEffect(() => {
+    if (gameMode !== 'online' || !onlineConfig) return;
+
+    const channel = supabase
+      .channel(`game-${onlineConfig.roomId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'game_rooms',
+          filter: `id=eq.${onlineConfig.roomId}`,
+        },
+        (payload) => {
+          const updated = payload.new as any;
+          
+          // Only process if it's now our turn (meaning opponent just moved)
+          if (updated.current_turn === onlineConfig.playerColor && updated.last_move && !isApplyingRemoteMove.current) {
+            isApplyingRemoteMove.current = true;
+            const move = updated.last_move as { from: Position; to: Position };
+            
+            // Execute the opponent's move with animation
+            const opponentColor: PieceColor = onlineConfig.playerColor === 'fire' ? 'ice' : 'fire';
+            executeMove(move.from, move.to, boardRef.current, opponentColor);
+            
+            // Reset flag after animation completes
+            setTimeout(() => {
+              isApplyingRemoteMove.current = false;
+            }, 1200);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [gameMode, onlineConfig, executeMove]);
 
   // AI move trigger
   useEffect(() => {
@@ -255,7 +327,13 @@ export function useChessGame() {
     resetGame();
   }, [resetGame]);
 
-  // Undo last move (PvP only)
+  const startOnlineGame = useCallback((roomId: string, playerColor: 'fire' | 'ice') => {
+    setOnlineConfig({ roomId, playerColor });
+    setGameMode('online');
+    resetGame();
+  }, [resetGame]);
+
+  // Undo last move (PvP only, not online)
   const undoMove = useCallback(() => {
     if (gameMode !== 'pvp' || animatingPiece || boardHistory.length === 0) return;
 
@@ -277,18 +355,10 @@ export function useChessGame() {
     setMoveHistory(prev => prev.slice(0, -1));
   }, [gameMode, animatingPiece, boardHistory]);
 
-  // View a specific move in history (click-to-replay)
   const viewMove = useCallback((moveIndex: number) => {
     if (animatingPiece) return;
     
-    // moveIndex is 0-based into moveHistory
-    // boardHistory[i] = snapshot BEFORE move i was made
-    // So after move i, the state is: apply move i to boardHistory[i]
-    // But we stored the board state AFTER the move in the next snapshot's "before" state
-    // Actually: boardHistory[i] = state before move[i], so state after move[i] = boardHistory[i+1] or current state
-    
     if (moveIndex === moveHistory.length - 1) {
-      // Viewing the latest move = back to live
       setViewingMoveIndex(null);
       return;
     }
@@ -302,12 +372,10 @@ export function useChessGame() {
     setViewingMoveIndex(null);
   }, []);
 
-  // Get the board to display (either live or historical)
   const displayBoard = viewingMoveIndex !== null && viewingMoveIndex < boardHistory.length - 1
     ? boardHistory[viewingMoveIndex + 1].board
     : board;
 
-  // Get hint
   const getHint = useCallback(() => {
     if (checkmatedColor || animatingPiece || aiThinking || hintLoading) return;
     if (gameMode === 'pvai' && currentTurn === 'ice') return;
@@ -323,7 +391,6 @@ export function useChessGame() {
     }, 100);
   }, [board, currentTurn, checkmatedColor, animatingPiece, aiThinking, hintLoading, gameMode]);
 
-  // Clear hint when a move is made
   useEffect(() => {
     if (lastMove) setHintMove(null);
   }, [lastMove]);
@@ -333,7 +400,8 @@ export function useChessGame() {
     inCheck, checkmatedColor, animatingPiece, kingInCheckPos,
     gameMode, aiThinking, lastMovedPieceType, aiDifficulty,
     hintMove, hintLoading, moveHistory, viewingMoveIndex,
+    onlineConfig,
     handleSquareClick, resetGame, toggleGameMode, setAiDifficulty, getHint,
-    undoMove, viewMove, exitReplay,
+    undoMove, viewMove, exitReplay, startOnlineGame,
   };
 }

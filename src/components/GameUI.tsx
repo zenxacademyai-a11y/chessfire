@@ -1,5 +1,5 @@
 import { useMemo, useState, useEffect } from 'react';
-import { Crown, Swords, Shield, RotateCcw, Users, Bot, Brain, Clock, Flame, Snowflake, Trophy, AlertTriangle, Volume2, VolumeX, Zap, Target, Skull, Lightbulb, Menu, X } from 'lucide-react';
+import { Crown, Swords, Shield, RotateCcw, Users, Bot, Brain, Clock, Flame, Snowflake, Trophy, AlertTriangle, Volume2, VolumeX, Zap, Target, Skull, Lightbulb, Menu, X, Globe } from 'lucide-react';
 import type { PieceColor, PieceType, ChessPiece } from '@/utils/chessLogic';
 import { formatTime } from '@/hooks/useChessClock';
 import type { GameMode, AIDifficulty } from '@/hooks/useChessGame';
@@ -88,12 +88,13 @@ interface GameUIProps {
   onDifficultyChange: (d: AIDifficulty) => void;
   onHint: () => void;
   hintLoading: boolean;
+  onlinePlayerColor?: 'fire' | 'ice' | null;
 }
 
 export default function GameUI({
   currentTurn, capturedPieces, onReset, inCheck, checkmatedColor,
   fireTime, iceTime, timedOutColor, gameMode, aiThinking, onModeChange,
-  aiDifficulty, onDifficultyChange, onHint, hintLoading
+  aiDifficulty, onDifficultyChange, onHint, hintLoading, onlinePlayerColor
 }: GameUIProps) {
   const fireCaptured = capturedPieces.filter(p => p.color === 'fire');
   const iceCaptured = capturedPieces.filter(p => p.color === 'ice');
@@ -164,28 +165,37 @@ export default function GameUI({
           </button>
         </div>
 
-        {/* Desktop controls */}
+        {/* Desktop controls — hide mode toggles during online */}
         <div className="pointer-events-auto hidden md:flex items-center gap-2">
-          {/* Mode selector */}
-          <div className="glass-panel rounded-xl overflow-hidden flex">
-            <button
-              onClick={() => onModeChange('pvp')}
-              className={`px-3 py-2 text-xs font-semibold tracking-wide transition-all flex items-center gap-1.5 ${
-                gameMode === 'pvp' ? 'bg-primary/15 text-primary shadow-inner' : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
-              }`}
-            >
-              <Users size={14} /> PvP
-            </button>
-            <div className="w-px bg-border/50" />
-            <button
-              onClick={() => onModeChange('pvai')}
-              className={`px-3 py-2 text-xs font-semibold tracking-wide transition-all flex items-center gap-1.5 ${
-                gameMode === 'pvai' ? 'bg-secondary/15 text-secondary shadow-inner' : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
-              }`}
-            >
-              <Bot size={14} /> vs AI
-            </button>
-          </div>
+          {gameMode === 'online' ? (
+            <div className="glass-panel rounded-xl px-3 py-2 flex items-center gap-1.5">
+              <Globe size={14} className="text-emerald-400" />
+              <span className="text-xs font-semibold text-emerald-400 tracking-wide">ONLINE</span>
+              <span className="text-xs text-muted-foreground ml-1">
+                {currentTurn === onlinePlayerColor ? '— Your turn' : '— Waiting...'}
+              </span>
+            </div>
+          ) : (
+            <div className="glass-panel rounded-xl overflow-hidden flex">
+              <button
+                onClick={() => onModeChange('pvp')}
+                className={`px-3 py-2 text-xs font-semibold tracking-wide transition-all flex items-center gap-1.5 ${
+                  gameMode === 'pvp' ? 'bg-primary/15 text-primary shadow-inner' : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                }`}
+              >
+                <Users size={14} /> PvP
+              </button>
+              <div className="w-px bg-border/50" />
+              <button
+                onClick={() => onModeChange('pvai')}
+                className={`px-3 py-2 text-xs font-semibold tracking-wide transition-all flex items-center gap-1.5 ${
+                  gameMode === 'pvai' ? 'bg-secondary/15 text-secondary shadow-inner' : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                }`}
+              >
+                <Bot size={14} /> vs AI
+              </button>
+            </div>
+          )}
 
           {/* AI Difficulty selector */}
           {gameMode === 'pvai' && (
@@ -269,20 +279,30 @@ export default function GameUI({
         <div className="absolute top-14 right-2 z-50 pointer-events-auto glass-panel rounded-xl p-3 flex flex-col gap-2 w-52 md:hidden"
           style={{ boxShadow: '0 8px 30px hsl(0 0% 0% / 0.2)' }}>
           {/* Mode */}
-          <div className="flex gap-1">
-            <button onClick={() => { onModeChange('pvp'); setMobileMenuOpen(false); }}
-              className={`flex-1 px-2 py-1.5 text-xs font-semibold rounded-lg flex items-center justify-center gap-1 ${
-                gameMode === 'pvp' ? 'bg-primary/15 text-primary' : 'text-muted-foreground'
-              }`}>
-              <Users size={12} /> PvP
-            </button>
-            <button onClick={() => { onModeChange('pvai'); setMobileMenuOpen(false); }}
-              className={`flex-1 px-2 py-1.5 text-xs font-semibold rounded-lg flex items-center justify-center gap-1 ${
-                gameMode === 'pvai' ? 'bg-secondary/15 text-secondary' : 'text-muted-foreground'
-              }`}>
-              <Bot size={12} /> vs AI
-            </button>
-          </div>
+          {gameMode === 'online' ? (
+            <div className="flex items-center gap-1.5 px-2 py-1.5">
+              <Globe size={12} className="text-emerald-400" />
+              <span className="text-xs font-semibold text-emerald-400">ONLINE</span>
+              <span className="text-[10px] text-muted-foreground">
+                {currentTurn === onlinePlayerColor ? '— Your turn' : '— Waiting...'}
+              </span>
+            </div>
+          ) : (
+            <div className="flex gap-1">
+              <button onClick={() => { onModeChange('pvp'); setMobileMenuOpen(false); }}
+                className={`flex-1 px-2 py-1.5 text-xs font-semibold rounded-lg flex items-center justify-center gap-1 ${
+                  gameMode === 'pvp' ? 'bg-primary/15 text-primary' : 'text-muted-foreground'
+                }`}>
+                <Users size={12} /> PvP
+              </button>
+              <button onClick={() => { onModeChange('pvai'); setMobileMenuOpen(false); }}
+                className={`flex-1 px-2 py-1.5 text-xs font-semibold rounded-lg flex items-center justify-center gap-1 ${
+                  gameMode === 'pvai' ? 'bg-secondary/15 text-secondary' : 'text-muted-foreground'
+                }`}>
+                <Bot size={12} /> vs AI
+              </button>
+            </div>
+          )}
 
           {/* Difficulty */}
           {gameMode === 'pvai' && (
@@ -324,14 +344,18 @@ export default function GameUI({
       {/* ============ CHESS CLOCKS ============ */}
       {/* Desktop: left side vertical */}
       <div className="absolute left-3 top-1/2 -translate-y-1/2 hidden md:flex flex-col gap-3 pointer-events-none">
-        <ClockPanel color="ice" time={iceTime} isActive={currentTurn === 'ice' && !gameOver} isLow={iceTime <= 60} gameOver={gameOver} label={gameMode === 'pvai' ? 'AI' : 'ICE'} score={iceScore} />
-        <ClockPanel color="fire" time={fireTime} isActive={currentTurn === 'fire' && !gameOver} isLow={fireTime <= 60} gameOver={gameOver} label="FIRE" score={fireScore} />
+        <ClockPanel color="ice" time={iceTime} isActive={currentTurn === 'ice' && !gameOver} isLow={iceTime <= 60} gameOver={gameOver}
+          label={gameMode === 'online' ? (onlinePlayerColor === 'ice' ? 'YOU' : 'OPP') : gameMode === 'pvai' ? 'AI' : 'ICE'} score={iceScore} />
+        <ClockPanel color="fire" time={fireTime} isActive={currentTurn === 'fire' && !gameOver} isLow={fireTime <= 60} gameOver={gameOver}
+          label={gameMode === 'online' ? (onlinePlayerColor === 'fire' ? 'YOU' : 'OPP') : 'FIRE'} score={fireScore} />
       </div>
 
       {/* Mobile: bottom horizontal compact clocks */}
       <div className="absolute bottom-16 left-2 right-2 flex md:hidden justify-between gap-2 pointer-events-none">
-        <MobileClockPanel color="fire" time={fireTime} isActive={currentTurn === 'fire' && !gameOver} isLow={fireTime <= 60} gameOver={gameOver} label="FIRE" score={fireScore} />
-        <MobileClockPanel color="ice" time={iceTime} isActive={currentTurn === 'ice' && !gameOver} isLow={iceTime <= 60} gameOver={gameOver} label={gameMode === 'pvai' ? 'AI' : 'ICE'} score={iceScore} />
+        <MobileClockPanel color="fire" time={fireTime} isActive={currentTurn === 'fire' && !gameOver} isLow={fireTime <= 60} gameOver={gameOver}
+          label={gameMode === 'online' ? (onlinePlayerColor === 'fire' ? 'YOU' : 'OPP') : 'FIRE'} score={fireScore} />
+        <MobileClockPanel color="ice" time={iceTime} isActive={currentTurn === 'ice' && !gameOver} isLow={iceTime <= 60} gameOver={gameOver}
+          label={gameMode === 'online' ? (onlinePlayerColor === 'ice' ? 'YOU' : 'OPP') : gameMode === 'pvai' ? 'AI' : 'ICE'} score={iceScore} />
       </div>
 
       {/* ============ GAME OVER OVERLAY ============ */}

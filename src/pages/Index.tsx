@@ -17,8 +17,9 @@ const Index = () => {
     inCheck, checkmatedColor, animatingPiece, kingInCheckPos,
     gameMode, aiThinking, lastMovedPieceType, aiDifficulty,
     hintMove, hintLoading, moveHistory, viewingMoveIndex,
+    onlineConfig,
     handleSquareClick, resetGame, toggleGameMode, setAiDifficulty, getHint,
-    undoMove, viewMove, exitReplay
+    undoMove, viewMove, exitReplay, startOnlineGame
   } = useChessGame();
   const { fireTime, iceTime, timedOutColor, resetClock } = useChessClock(currentTurn, checkmatedColor);
   const { playMove, playCapture, playSelect, playCheck, playCheckmate, playPieceMove, playPieceCapture, playVictory, playDefeat } = useSound();
@@ -30,7 +31,8 @@ const Index = () => {
     resetClock();
   }, [resetGame, resetClock]);
 
-  const handleModeChange = useCallback((mode: 'pvp' | 'pvai') => {
+  const handleModeChange = useCallback((mode: 'pvp' | 'pvai' | 'online') => {
+    if (mode === 'online') return; // Can't switch to online from in-game
     toggleGameMode(mode);
     resetClock();
   }, [toggleGameMode, resetClock]);
@@ -43,14 +45,10 @@ const Index = () => {
   }, [toggleGameMode, resetGame, resetClock]);
 
   const handleStartOnline = useCallback((roomId: string, playerColor: 'fire' | 'ice') => {
-    // For now, just start as PvP — real-time sync will be added in next step
-    toggleGameMode('pvp');
-    resetGame();
+    startOnlineGame(roomId, playerColor);
     resetClock();
     setGameStarted(true);
-    // TODO: Wire up real-time game sync with roomId and playerColor
-    console.log('Online game started:', { roomId, playerColor });
-  }, [toggleGameMode, resetGame, resetClock]);
+  }, [startOnlineGame, resetClock]);
 
   // Move sounds
   useEffect(() => {
@@ -109,6 +107,7 @@ const Index = () => {
         onDifficultyChange={setAiDifficulty}
         onHint={getHint}
         hintLoading={hintLoading}
+        onlinePlayerColor={onlineConfig?.playerColor}
       />
 
       {/* Undo button for PvP */}

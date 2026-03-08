@@ -106,6 +106,7 @@ const Index = () => {
         onDifficultyChange={setAiDifficulty}
         onHint={getHint}
         hintLoading={hintLoading}
+        onlinePlayerColor={onlineConfig?.playerColor}
       />
 
       {/* Undo button for PvP */}

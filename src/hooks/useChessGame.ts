@@ -203,7 +203,7 @@ export function useChessGame() {
   return {
     board, selectedPos, validMoves, currentTurn, capturedPieces, lastMove, moveType,
     inCheck, checkmatedColor, animatingPiece, kingInCheckPos,
-    gameMode, aiThinking,
+    gameMode, aiThinking, lastMovedPieceType,
     handleSquareClick, resetGame, toggleGameMode
   };
 }

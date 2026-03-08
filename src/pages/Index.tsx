@@ -88,7 +88,7 @@ const Index = () => {
   return (
     <div className="relative w-full h-screen bg-background overflow-hidden">
       {/* Start screen */}
-      {!gameStarted && <StartScreen onStart={handleStart} />}
+      {!gameStarted && <StartScreen onStart={handleStart} onStartOnline={handleStartOnline} />}
 
       {/* Confetti on player victory */}
       <ConfettiExplosion active={playerWon} />

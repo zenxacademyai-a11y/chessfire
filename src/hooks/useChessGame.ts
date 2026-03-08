@@ -97,17 +97,26 @@ export function useChessGame() {
   // Execute a move with animation
   const executeMove = useCallback((from: Position, to: Position, boardState: Board, turn: PieceColor) => {
     const movingPiece = boardState[from.row][from.col]!;
+    const targetPiece = boardState[to.row][to.col];
     const fromPos: [number, number, number] = [from.col - 3.5, 0.08, from.row - 3.5];
     const toPos: [number, number, number] = [to.col - 3.5, 0.08, to.row - 3.5];
+    const isCapture = !!targetPiece && targetPiece.color !== movingPiece.color;
 
     setAnimatingPiece({
       from: fromPos, to: toPos,
       type: movingPiece.type, color: movingPiece.color,
       startTime: Date.now(), isKnight: movingPiece.type === 'knight',
+      isCapture,
+      capturedType: isCapture ? targetPiece!.type : undefined,
+      capturedColor: isCapture ? targetPiece!.color : undefined,
     });
 
     const { newBoard, captured } = movePiece(boardState, from, to);
-    const animDuration = movingPiece.type === 'knight' ? 600 : 400;
+    // Import duration calculator
+    const durations: Record<string, number> = { knight: 900, rook: 500, bishop: 700, queen: 800, king: 800, pawn: 400 };
+    const animDuration = isCapture
+      ? (movingPiece.type === 'knight' ? 1000 : movingPiece.type === 'queen' ? 900 : 800)
+      : (durations[movingPiece.type] || 500);
 
     setTimeout(() => {
       applyMoveResult(newBoard, captured, from, to, turn, setters);

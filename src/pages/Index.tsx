@@ -31,7 +31,8 @@ const Index = () => {
     resetClock();
   }, [resetGame, resetClock]);
 
-  const handleModeChange = useCallback((mode: 'pvp' | 'pvai') => {
+  const handleModeChange = useCallback((mode: 'pvp' | 'pvai' | 'online') => {
+    if (mode === 'online') return; // Can't switch to online from in-game
     toggleGameMode(mode);
     resetClock();
   }, [toggleGameMode, resetClock]);

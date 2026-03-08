@@ -14,6 +14,7 @@ interface ChessBoard3DProps {
   onSquareClick: (row: number, col: number) => void;
   animatingPiece: AnimatingPiece | null;
   kingInCheckPos: Position | null;
+  hintMove?: { from: Position; to: Position } | null;
 }
 
 function BoardSquare({ row, col, isLight, isSelected, isValidMove, isKingInCheck, onClick }: {

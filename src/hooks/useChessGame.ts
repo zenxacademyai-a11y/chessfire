@@ -223,6 +223,7 @@ export function useChessGame() {
     setAiThinking(false);
     setHintMove(null);
     setHintLoading(false);
+    setMoveHistory([]);
   }, []);
 
   const toggleGameMode = useCallback((mode: GameMode) => {

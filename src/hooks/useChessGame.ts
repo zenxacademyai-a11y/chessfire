@@ -258,6 +258,12 @@ export function useChessGame() {
         (payload) => {
           const updated = payload.new as any;
           
+          // Detect rematch (opponent reset the room)
+          if (updated.status === 'playing' && !updated.last_move && updated.current_turn === 'fire') {
+            resetGame();
+            return;
+          }
+          
           // Only process if it's now our turn (meaning opponent just moved)
           if (updated.current_turn === onlineConfig.playerColor && updated.last_move && !isApplyingRemoteMove.current) {
             isApplyingRemoteMove.current = true;

@@ -80,6 +80,7 @@ export function useChessGame() {
   const [capturedPieces, setCapturedPieces] = useState<ChessPiece[]>([]);
   const [lastMove, setLastMove] = useState<{ from: Position; to: Position } | null>(null);
   const [moveType, setMoveType] = useState<'move' | 'capture' | 'check' | 'checkmate' | null>(null);
+  const [lastMovedPieceType, setLastMovedPieceType] = useState<PieceType | null>(null);
   const [inCheck, setInCheck] = useState<PieceColor | null>(null);
   const [checkmatedColor, setCheckmatedColor] = useState<PieceColor | null>(null);
   const [animatingPiece, setAnimatingPiece] = useState<AnimatingPiece | null>(null);

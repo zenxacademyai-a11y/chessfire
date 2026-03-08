@@ -1,4 +1,5 @@
 import { useEffect, useRef, useCallback } from 'react';
+import { RotateCcw } from 'lucide-react';
 import { Canvas } from '@react-three/fiber';
 import ChessBoard3D from '@/components/ChessBoard3D';
 import GameUI from '@/components/GameUI';

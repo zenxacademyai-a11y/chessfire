@@ -334,14 +334,18 @@ export default function GameUI({
       {/* ============ CHESS CLOCKS ============ */}
       {/* Desktop: left side vertical */}
       <div className="absolute left-3 top-1/2 -translate-y-1/2 hidden md:flex flex-col gap-3 pointer-events-none">
-        <ClockPanel color="ice" time={iceTime} isActive={currentTurn === 'ice' && !gameOver} isLow={iceTime <= 60} gameOver={gameOver} label={gameMode === 'pvai' ? 'AI' : 'ICE'} score={iceScore} />
-        <ClockPanel color="fire" time={fireTime} isActive={currentTurn === 'fire' && !gameOver} isLow={fireTime <= 60} gameOver={gameOver} label="FIRE" score={fireScore} />
+        <ClockPanel color="ice" time={iceTime} isActive={currentTurn === 'ice' && !gameOver} isLow={iceTime <= 60} gameOver={gameOver}
+          label={gameMode === 'online' ? (onlinePlayerColor === 'ice' ? 'YOU' : 'OPP') : gameMode === 'pvai' ? 'AI' : 'ICE'} score={iceScore} />
+        <ClockPanel color="fire" time={fireTime} isActive={currentTurn === 'fire' && !gameOver} isLow={fireTime <= 60} gameOver={gameOver}
+          label={gameMode === 'online' ? (onlinePlayerColor === 'fire' ? 'YOU' : 'OPP') : 'FIRE'} score={fireScore} />
       </div>
 
       {/* Mobile: bottom horizontal compact clocks */}
       <div className="absolute bottom-16 left-2 right-2 flex md:hidden justify-between gap-2 pointer-events-none">
-        <MobileClockPanel color="fire" time={fireTime} isActive={currentTurn === 'fire' && !gameOver} isLow={fireTime <= 60} gameOver={gameOver} label="FIRE" score={fireScore} />
-        <MobileClockPanel color="ice" time={iceTime} isActive={currentTurn === 'ice' && !gameOver} isLow={iceTime <= 60} gameOver={gameOver} label={gameMode === 'pvai' ? 'AI' : 'ICE'} score={iceScore} />
+        <MobileClockPanel color="fire" time={fireTime} isActive={currentTurn === 'fire' && !gameOver} isLow={fireTime <= 60} gameOver={gameOver}
+          label={gameMode === 'online' ? (onlinePlayerColor === 'fire' ? 'YOU' : 'OPP') : 'FIRE'} score={fireScore} />
+        <MobileClockPanel color="ice" time={iceTime} isActive={currentTurn === 'ice' && !gameOver} isLow={iceTime <= 60} gameOver={gameOver}
+          label={gameMode === 'online' ? (onlinePlayerColor === 'ice' ? 'YOU' : 'OPP') : gameMode === 'pvai' ? 'AI' : 'ICE'} score={iceScore} />
       </div>
 
       {/* ============ GAME OVER OVERLAY ============ */}

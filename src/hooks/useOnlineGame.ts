@@ -71,6 +71,7 @@ export function useOnlineGame() {
       roomId: data.id,
       playerColor: 'fire',
       error: null,
+      opponentDisconnected: false,
     });
   }, []);
 

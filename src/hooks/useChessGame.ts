@@ -48,6 +48,18 @@ function applyMoveResult(
 ) {
   const { setBoard, setLastMove, setMoveType, setCapturedPieces, setCurrentTurn, setInCheck, setCheckmatedColor, setKingInCheckPos, setSelectedPos, setValidMoves, setAnimatingPiece, setMoveHistory } = setters;
   
+  // Save snapshot before applying move
+  setters.setBoardHistory(prev => [...prev, {
+    board: setters._prevBoard,
+    currentTurn,
+    capturedPieces: setters._prevCaptured,
+    lastMove: setters._prevLastMove,
+    inCheck: setters._prevInCheck,
+    checkmatedColor: setters._prevCheckmatedColor,
+    kingInCheckPos: setters._prevKingInCheckPos,
+  }]);
+  setters.setViewingMoveIndex(null);
+
   setBoard(newBoard);
   setAnimatingPiece(null);
   setLastMove({ from, to });

@@ -42,6 +42,16 @@ const Index = () => {
     setGameStarted(true);
   }, [toggleGameMode, resetGame, resetClock]);
 
+  const handleStartOnline = useCallback((roomId: string, playerColor: 'fire' | 'ice') => {
+    // For now, just start as PvP — real-time sync will be added in next step
+    toggleGameMode('pvp');
+    resetGame();
+    resetClock();
+    setGameStarted(true);
+    // TODO: Wire up real-time game sync with roomId and playerColor
+    console.log('Online game started:', { roomId, playerColor });
+  }, [toggleGameMode, resetGame, resetClock]);
+
   // Move sounds
   useEffect(() => {
     if (lastMove && lastMove !== prevMoveRef.current) {
@@ -78,7 +88,7 @@ const Index = () => {
   return (
     <div className="relative w-full h-screen bg-background overflow-hidden">
       {/* Start screen */}
-      {!gameStarted && <StartScreen onStart={handleStart} />}
+      {!gameStarted && <StartScreen onStart={handleStart} onStartOnline={handleStartOnline} />}
 
       {/* Confetti on player victory */}
       <ConfettiExplosion active={playerWon} />

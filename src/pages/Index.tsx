@@ -123,7 +123,13 @@ const Index = () => {
         onExitReplay={exitReplay}
         canUndo={gameMode === 'pvp' && !checkmatedColor && !timedOutColor && moveHistory.length > 0}
         onUndo={undoMove}
-      />
+
+      <Canvas
+        shadows
+        camera={{ position: [0, 8, 8], fov: 50 }}
+        style={{ background: 'linear-gradient(180deg, #f0f0f5 0%, #e8e8f0 40%, #dde0ea 100%)' }}
+      >
+        <ChessBoard3D
           board={board}
           selectedPos={selectedPos}
           validMoves={validMoves}

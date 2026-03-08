@@ -189,7 +189,8 @@ export function useChessGame() {
   const pushMoveOnline = useCallback(async (newBoard: Board, from: Position, to: Position, nextTurn: PieceColor) => {
     if (!onlineConfig) return;
     
-    await supabase
+    console.log('[Game] Pushing move online:', { from, to, nextTurn, roomId: onlineConfig.roomId });
+    const { error } = await supabase
       .from('game_rooms')
       .update({
         board_state: newBoard as unknown as Json,
@@ -197,6 +198,9 @@ export function useChessGame() {
         last_move: { from, to } as unknown as Json,
       })
       .eq('id', onlineConfig.roomId);
+    
+    if (error) console.error('[Game] Push move error:', error);
+    else console.log('[Game] Move pushed successfully');
   }, [onlineConfig]);
 
   const handleSquareClick = useCallback((row: number, col: number) => {

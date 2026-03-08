@@ -109,6 +109,7 @@ const Index = () => {
         hintLoading={hintLoading}
         onlinePlayerColor={onlineConfig?.playerColor}
         opponentDisconnected={opponentDisconnected}
+        onClaimVictory={claimVictory}
       />
 
       {/* Undo button for PvP */}

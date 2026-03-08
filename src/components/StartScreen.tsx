@@ -173,12 +173,11 @@ export default function StartScreen({ onStart, onStartOnline }: StartScreenProps
     return params.get('join') || null;
   });
 
-  // Show online panel if join code in URL
-  useState(() => {
+  useEffect(() => {
     if (initialJoinCode) {
       setShowOnline(true);
     }
-  });
+  }, [initialJoinCode]);
 
   return (
     <AnimatePresence>

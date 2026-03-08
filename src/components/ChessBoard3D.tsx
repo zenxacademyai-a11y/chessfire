@@ -240,7 +240,7 @@ export default function ChessBoard3D({ board, selectedPos, validMoves, onSquareC
       <RealisticFire />
       <RealisticIceSnow />
 
-      <ContactShadows position={[0, -0.1, 0]} opacity={0.3} scale={14} blur={2.5} color="#333" />
+      {/* ContactShadows removed for performance */}
       
       {/* Ground plane for white bg */}
       <mesh position={[0, -0.2, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>

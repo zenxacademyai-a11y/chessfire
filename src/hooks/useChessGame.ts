@@ -257,7 +257,7 @@ export function useChessGame() {
     board, selectedPos, validMoves, currentTurn, capturedPieces, lastMove, moveType,
     inCheck, checkmatedColor, animatingPiece, kingInCheckPos,
     gameMode, aiThinking, lastMovedPieceType, aiDifficulty,
-    hintMove, hintLoading,
+    hintMove, hintLoading, moveHistory,
     handleSquareClick, resetGame, toggleGameMode, setAiDifficulty, getHint
   };
 }

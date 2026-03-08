@@ -18,7 +18,7 @@ export default defineConfig(({ mode }) => ({
     mode === "development" && componentTagger(),
     VitePWA({
       registerType: "autoUpdate",
-      includeAssets: ["favicon.ico", "pwa-icon-512.png"],
+      includeAssets: ["favicon.png", "pwa-icon-512.png"],
       manifest: {
         name: "Fire vs Ice - 3D Chess Battle",
         short_name: "Fire vs Ice",

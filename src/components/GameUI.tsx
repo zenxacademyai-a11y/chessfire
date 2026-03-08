@@ -89,6 +89,7 @@ interface GameUIProps {
   onHint: () => void;
   hintLoading: boolean;
   onlinePlayerColor?: 'fire' | 'ice' | null;
+  opponentDisconnected?: boolean;
 }
 
 export default function GameUI({

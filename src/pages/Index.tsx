@@ -29,6 +29,7 @@ const Index = () => {
   const handleReset = useCallback(() => {
     resetGame();
     resetClock();
+    setGameStarted(false);
   }, [resetGame, resetClock]);
 
   const handleModeChange = useCallback((mode: 'pvp' | 'pvai' | 'online') => {

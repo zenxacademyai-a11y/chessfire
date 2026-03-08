@@ -114,9 +114,11 @@ export function useOnlineGame() {
       .eq('status', 'waiting');
 
     if (updateError) {
+      console.error('[Online] Join update error:', updateError);
       setState(s => ({ ...s, status: 'idle', error: 'Failed to join room.' }));
       return;
     }
+    console.log('[Online] Joined room as ice');
 
     setState({
       status: 'playing',

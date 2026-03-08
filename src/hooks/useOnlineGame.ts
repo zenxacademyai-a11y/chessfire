@@ -29,6 +29,7 @@ interface OnlineGameState {
   roomId: string | null;
   playerColor: 'fire' | 'ice' | null;
   error: string | null;
+  opponentDisconnected: boolean;
 }
 
 export function useOnlineGame() {

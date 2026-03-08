@@ -359,6 +359,7 @@ export function useChessGame() {
     setMoveHistory([]);
     setBoardHistory([]);
     setViewingMoveIndex(null);
+    setOpponentDisconnected(false);
   }, []);
 
   const toggleGameMode = useCallback((mode: GameMode) => {

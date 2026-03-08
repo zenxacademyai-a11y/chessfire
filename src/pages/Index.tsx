@@ -11,6 +11,7 @@ import { useChessClock } from '@/hooks/useChessClock';
 import { useSound } from '@/components/SoundManager';
 
 const Index = () => {
+  const [gameStarted, setGameStarted] = useState(false);
   const {
     board, selectedPos, validMoves, currentTurn, capturedPieces, lastMove, moveType,
     inCheck, checkmatedColor, animatingPiece, kingInCheckPos,

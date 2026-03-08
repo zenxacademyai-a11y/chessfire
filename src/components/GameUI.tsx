@@ -279,20 +279,30 @@ export default function GameUI({
         <div className="absolute top-14 right-2 z-50 pointer-events-auto glass-panel rounded-xl p-3 flex flex-col gap-2 w-52 md:hidden"
           style={{ boxShadow: '0 8px 30px hsl(0 0% 0% / 0.2)' }}>
           {/* Mode */}
-          <div className="flex gap-1">
-            <button onClick={() => { onModeChange('pvp'); setMobileMenuOpen(false); }}
-              className={`flex-1 px-2 py-1.5 text-xs font-semibold rounded-lg flex items-center justify-center gap-1 ${
-                gameMode === 'pvp' ? 'bg-primary/15 text-primary' : 'text-muted-foreground'
-              }`}>
-              <Users size={12} /> PvP
-            </button>
-            <button onClick={() => { onModeChange('pvai'); setMobileMenuOpen(false); }}
-              className={`flex-1 px-2 py-1.5 text-xs font-semibold rounded-lg flex items-center justify-center gap-1 ${
-                gameMode === 'pvai' ? 'bg-secondary/15 text-secondary' : 'text-muted-foreground'
-              }`}>
-              <Bot size={12} /> vs AI
-            </button>
-          </div>
+          {gameMode === 'online' ? (
+            <div className="flex items-center gap-1.5 px-2 py-1.5">
+              <Globe size={12} className="text-emerald-400" />
+              <span className="text-xs font-semibold text-emerald-400">ONLINE</span>
+              <span className="text-[10px] text-muted-foreground">
+                {currentTurn === onlinePlayerColor ? '— Your turn' : '— Waiting...'}
+              </span>
+            </div>
+          ) : (
+            <div className="flex gap-1">
+              <button onClick={() => { onModeChange('pvp'); setMobileMenuOpen(false); }}
+                className={`flex-1 px-2 py-1.5 text-xs font-semibold rounded-lg flex items-center justify-center gap-1 ${
+                  gameMode === 'pvp' ? 'bg-primary/15 text-primary' : 'text-muted-foreground'
+                }`}>
+                <Users size={12} /> PvP
+              </button>
+              <button onClick={() => { onModeChange('pvai'); setMobileMenuOpen(false); }}
+                className={`flex-1 px-2 py-1.5 text-xs font-semibold rounded-lg flex items-center justify-center gap-1 ${
+                  gameMode === 'pvai' ? 'bg-secondary/15 text-secondary' : 'text-muted-foreground'
+                }`}>
+                <Bot size={12} /> vs AI
+              </button>
+            </div>
+          )}
 
           {/* Difficulty */}
           {gameMode === 'pvai' && (

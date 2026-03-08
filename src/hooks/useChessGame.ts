@@ -3,6 +3,7 @@ import { Board, Position, PieceColor, PieceType, ChessPiece, createInitialBoard,
 import { getBestMove } from '@/utils/chessAI';
 
 export type GameMode = 'pvp' | 'pvai';
+export type AIDifficulty = 'easy' | 'medium' | 'hard';
 
 export interface AnimatingPiece {
   from: [number, number, number];
@@ -15,6 +16,12 @@ export interface AnimatingPiece {
   capturedType?: ChessPiece['type'];
   capturedColor?: PieceColor;
 }
+
+const AI_DEPTH: Record<AIDifficulty, number> = {
+  easy: 1,
+  medium: 3,
+  hard: 4,
+};
 
 function applyMoveResult(
   newBoard: Board,
@@ -86,6 +93,7 @@ export function useChessGame() {
   const [animatingPiece, setAnimatingPiece] = useState<AnimatingPiece | null>(null);
   const [kingInCheckPos, setKingInCheckPos] = useState<Position | null>(null);
   const [gameMode, setGameMode] = useState<GameMode>('pvai');
+  const [aiDifficulty, setAiDifficulty] = useState<AIDifficulty>('medium');
   const [aiThinking, setAiThinking] = useState(false);
   const aiTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -95,7 +103,6 @@ export function useChessGame() {
     setValidMoves, setAnimatingPiece,
   };
 
-  // Execute a move with animation
   const executeMove = useCallback((from: Position, to: Position, boardState: Board, turn: PieceColor) => {
     const movingPiece = boardState[from.row][from.col]!;
     const targetPiece = boardState[to.row][to.col];
@@ -114,7 +121,6 @@ export function useChessGame() {
     });
 
     const { newBoard, captured } = movePiece(boardState, from, to);
-    // Import duration calculator
     const durations: Record<string, number> = { knight: 900, rook: 500, bishop: 700, queen: 800, king: 800, pawn: 400 };
     const animDuration = isCapture
       ? (movingPiece.type === 'knight' ? 1000 : movingPiece.type === 'queen' ? 900 : 800)
@@ -127,7 +133,7 @@ export function useChessGame() {
 
   const handleSquareClick = useCallback((row: number, col: number) => {
     if (animatingPiece || checkmatedColor || aiThinking) return;
-    if (gameMode === 'pvai' && currentTurn === 'ice') return; // Block clicks during AI turn
+    if (gameMode === 'pvai' && currentTurn === 'ice') return;
     
     const piece = board[row][col];
 
@@ -163,10 +169,10 @@ export function useChessGame() {
     if (gameMode !== 'pvai' || currentTurn !== 'ice' || checkmatedColor || animatingPiece) return;
     
     setAiThinking(true);
+    const depth = AI_DEPTH[aiDifficulty];
     
-    // Small delay so the UI updates first, then compute
     aiTimeoutRef.current = setTimeout(() => {
-      const bestMove = getBestMove(board, 'ice', 3);
+      const bestMove = getBestMove(board, 'ice', depth);
       
       if (bestMove) {
         executeMove(bestMove.from, bestMove.to, board, 'ice');
@@ -177,7 +183,7 @@ export function useChessGame() {
     return () => {
       if (aiTimeoutRef.current) clearTimeout(aiTimeoutRef.current);
     };
-  }, [currentTurn, gameMode, checkmatedColor, board, animatingPiece, executeMove]);
+  }, [currentTurn, gameMode, checkmatedColor, board, animatingPiece, executeMove, aiDifficulty]);
 
   const resetGame = useCallback(() => {
     if (aiTimeoutRef.current) clearTimeout(aiTimeoutRef.current);
@@ -203,7 +209,7 @@ export function useChessGame() {
   return {
     board, selectedPos, validMoves, currentTurn, capturedPieces, lastMove, moveType,
     inCheck, checkmatedColor, animatingPiece, kingInCheckPos,
-    gameMode, aiThinking, lastMovedPieceType,
-    handleSquareClick, resetGame, toggleGameMode
+    gameMode, aiThinking, lastMovedPieceType, aiDifficulty,
+    handleSquareClick, resetGame, toggleGameMode, setAiDifficulty
   };
 }

@@ -1,8 +1,10 @@
-import { useMemo } from 'react';
-import { Crown, Swords, Shield, RotateCcw, Users, Bot, Brain, Clock, Flame, Snowflake, Trophy, AlertTriangle } from 'lucide-react';
+import { useMemo, useState, useEffect } from 'react';
+import { Crown, Swords, Shield, RotateCcw, Users, Bot, Brain, Clock, Flame, Snowflake, Trophy, AlertTriangle, Volume2, VolumeX, Zap, Target, Skull } from 'lucide-react';
 import type { PieceColor, PieceType, ChessPiece } from '@/utils/chessLogic';
 import { formatTime } from '@/hooks/useChessClock';
-import type { GameMode } from '@/hooks/useChessGame';
+import type { GameMode, AIDifficulty } from '@/hooks/useChessGame';
+import { Slider } from '@/components/ui/slider';
+import { useSoundStore } from '@/components/SoundManager';
 
 // Chess piece SVG icons with detailed outlines
 function ChessIcon({ type, color, size = 24, className = '' }: { type: PieceType; color: PieceColor; size?: number; className?: string }) {
@@ -82,21 +84,27 @@ interface GameUIProps {
   gameMode: GameMode;
   aiThinking: boolean;
   onModeChange: (mode: GameMode) => void;
+  aiDifficulty: AIDifficulty;
+  onDifficultyChange: (d: AIDifficulty) => void;
 }
 
 export default function GameUI({
   currentTurn, capturedPieces, onReset, inCheck, checkmatedColor,
-  fireTime, iceTime, timedOutColor, gameMode, aiThinking, onModeChange
+  fireTime, iceTime, timedOutColor, gameMode, aiThinking, onModeChange,
+  aiDifficulty, onDifficultyChange
 }: GameUIProps) {
   const fireCaptured = capturedPieces.filter(p => p.color === 'fire');
   const iceCaptured = capturedPieces.filter(p => p.color === 'ice');
   const winner = checkmatedColor === 'fire' ? 'ice' : checkmatedColor === 'ice' ? 'fire' : timedOutColor === 'fire' ? 'ice' : timedOutColor === 'ice' ? 'fire' : null;
   const gameOver = !!checkmatedColor || !!timedOutColor;
 
-  // Score calculation
   const pieceValues: Record<PieceType, number> = { pawn: 1, knight: 3, bishop: 3, rook: 5, queen: 9, king: 0 };
   const fireScore = iceCaptured.reduce((s, p) => s + pieceValues[p.type], 0);
   const iceScore = fireCaptured.reduce((s, p) => s + pieceValues[p.type], 0);
+
+  // Determine if player won or lost (in PvAI mode)
+  const playerWon = gameOver && winner === 'fire' && gameMode === 'pvai';
+  const playerLost = gameOver && winner === 'ice' && gameMode === 'pvai';
 
   return (
     <div className="absolute top-0 left-0 right-0 bottom-0 z-10 pointer-events-none">
@@ -150,6 +158,35 @@ export default function GameUI({
             </button>
           </div>
 
+          {/* AI Difficulty selector */}
+          {gameMode === 'pvai' && (
+            <div className="glass-panel rounded-xl overflow-hidden flex">
+              {([
+                { key: 'easy' as AIDifficulty, label: 'Easy', icon: Zap, color: 'text-green-500' },
+                { key: 'medium' as AIDifficulty, label: 'Med', icon: Target, color: 'text-yellow-500' },
+                { key: 'hard' as AIDifficulty, label: 'Hard', icon: Skull, color: 'text-red-500' },
+              ]).map((d, i) => (
+                <div key={d.key} className="flex items-center">
+                  {i > 0 && <div className="w-px bg-border/50" />}
+                  <button
+                    onClick={() => onDifficultyChange(d.key)}
+                    className={`px-2.5 py-2 text-[11px] font-semibold tracking-wide transition-all flex items-center gap-1 ${
+                      aiDifficulty === d.key
+                        ? `bg-muted/60 ${d.color} shadow-inner`
+                        : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                    }`}
+                  >
+                    <d.icon size={12} />
+                    {d.label}
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Volume control */}
+          <VolumeControl />
+
           {/* AI thinking */}
           {aiThinking && (
             <div className="glass-panel rounded-xl px-3 py-2 flex items-center gap-2 animate-pulse"
@@ -201,7 +238,6 @@ export default function GameUI({
 
       {/* ============ CHESS CLOCKS - LEFT SIDE ============ */}
       <div className="absolute left-3 top-1/2 -translate-y-1/2 flex flex-col gap-3 pointer-events-none">
-        {/* Ice clock */}
         <ClockPanel
           color="ice"
           time={iceTime}
@@ -211,7 +247,6 @@ export default function GameUI({
           label={gameMode === 'pvai' ? 'AI' : 'ICE'}
           score={iceScore}
         />
-        {/* Fire clock */}
         <ClockPanel
           color="fire"
           time={fireTime}
@@ -225,65 +260,180 @@ export default function GameUI({
 
       {/* ============ GAME OVER OVERLAY ============ */}
       {gameOver && winner && (
-        <div className="flex justify-center mt-6 pointer-events-auto">
-          <div
-            className="glass-panel rounded-2xl px-10 py-6 text-center relative overflow-hidden"
-            style={{
-              borderColor: winner === 'fire' ? 'hsl(15, 90%, 55%, 0.6)' : 'hsl(210, 80%, 55%, 0.6)',
-              boxShadow: winner === 'fire'
-                ? '0 0 60px hsl(15 90% 55% / 0.4), 0 0 120px hsl(15 90% 55% / 0.15)'
-                : '0 0 60px hsl(210 80% 55% / 0.4), 0 0 120px hsl(210 80% 55% / 0.15)',
-              animation: 'victory-glow 2s ease-in-out infinite',
-            }}
-          >
-            {/* Shimmer overlay */}
-            <div className="absolute inset-0 opacity-20 pointer-events-none"
-              style={{
-                background: `linear-gradient(90deg, transparent, ${winner === 'fire' ? 'hsl(15, 90%, 55%)' : 'hsl(210, 80%, 55%)'}, transparent)`,
-                backgroundSize: '200% 100%',
-                animation: 'shimmer 3s linear infinite',
-              }} />
-
-            <div className="relative z-10">
-              <div className="flex items-center justify-center gap-3 mb-3">
-                <Trophy size={32} className={winner === 'fire' ? 'text-primary' : 'text-secondary'} />
-                <p className="text-3xl md:text-4xl font-bold tracking-wider">
-                  {checkmatedColor ? 'CHECKMATE!' : 'TIME OUT!'}
-                </p>
-                <Trophy size={32} className={winner === 'fire' ? 'text-primary' : 'text-secondary'} />
-              </div>
-              <div className="flex items-center justify-center gap-2 mb-4">
-                {winner === 'fire' ? <Flame size={20} className="text-primary" /> : <Snowflake size={20} className="text-secondary" />}
-                <p className={`text-lg font-bold ${winner === 'fire' ? 'text-primary' : 'text-secondary'}`}>
-                  {winner === 'fire' ? 'Fire' : 'Ice'} Wins!
-                </p>
-              </div>
-              <button
-                onClick={onReset}
-                className="px-6 py-2.5 rounded-xl border border-border bg-card/80 text-foreground font-semibold hover:bg-muted transition-all hover:scale-105 flex items-center gap-2 mx-auto"
-              >
-                <RotateCcw size={16} />
-                Play Again
-              </button>
-            </div>
-          </div>
-        </div>
+        <GameOverOverlay
+          winner={winner}
+          checkmatedColor={checkmatedColor}
+          onReset={onReset}
+          playerWon={playerWon}
+          playerLost={playerLost}
+          gameMode={gameMode}
+        />
       )}
 
       {/* ============ CAPTURED PIECES - BOTTOM ============ */}
       <div className="absolute bottom-3 left-3 right-3 flex justify-between pointer-events-none">
-        <CapturedPanel
-          color="fire"
-          label="Fire Captured"
-          pieces={iceCaptured}
-          score={fireScore}
+        <CapturedPanel color="fire" label="Fire Captured" pieces={iceCaptured} score={fireScore} />
+        <CapturedPanel color="ice" label="Ice Captured" pieces={fireCaptured} score={iceScore} />
+      </div>
+    </div>
+  );
+}
+
+// ============ VOLUME CONTROL ============
+
+function VolumeControl() {
+  const { volume, muted, setVolume, toggleMute } = useSoundStore();
+  const [showSlider, setShowSlider] = useState(false);
+
+  return (
+    <div className="relative" onMouseEnter={() => setShowSlider(true)} onMouseLeave={() => setShowSlider(false)}>
+      <button
+        onClick={toggleMute}
+        className="glass-panel rounded-xl px-2.5 py-2 flex items-center gap-1 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all"
+      >
+        {muted ? <VolumeX size={16} /> : <Volume2 size={16} />}
+      </button>
+      {showSlider && (
+        <div className="absolute top-full mt-1 right-0 glass-panel rounded-xl px-3 py-3 w-36 pointer-events-auto z-50"
+          style={{ boxShadow: '0 8px 30px hsl(0 0% 0% / 0.15)' }}>
+          <Slider
+            value={[muted ? 0 : volume * 100]}
+            onValueChange={([v]) => { setVolume(v / 100); if (muted) toggleMute(); }}
+            max={100}
+            step={1}
+            className="w-full"
+          />
+          <p className="text-[10px] text-muted-foreground text-center mt-1.5 tracking-wider">
+            {muted ? 'MUTED' : `${Math.round(volume * 100)}%`}
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ============ GAME OVER OVERLAY WITH VFX ============
+
+function GameOverOverlay({ winner, checkmatedColor, onReset, playerWon, playerLost, gameMode }: {
+  winner: PieceColor;
+  checkmatedColor: PieceColor | null;
+  onReset: () => void;
+  playerWon: boolean;
+  playerLost: boolean;
+  gameMode: GameMode;
+}) {
+  const [particles, setParticles] = useState<Array<{ id: number; x: number; y: number; size: number; delay: number; color: string }>>([]);
+
+  useEffect(() => {
+    // Generate particles for win/lose effects
+    const newParticles = Array.from({ length: 30 }, (_, i) => ({
+      id: i,
+      x: Math.random() * 100,
+      y: Math.random() * 100,
+      size: 4 + Math.random() * 8,
+      delay: Math.random() * 2,
+      color: winner === 'fire'
+        ? `hsl(${10 + Math.random() * 30}, 90%, ${50 + Math.random() * 20}%)`
+        : `hsl(${200 + Math.random() * 30}, 80%, ${50 + Math.random() * 20}%)`,
+    }));
+    setParticles(newParticles);
+  }, [winner]);
+
+  const isFire = winner === 'fire';
+
+  return (
+    <div className="flex justify-center mt-6 pointer-events-auto">
+      {/* Floating particles */}
+      {particles.map(p => (
+        <div
+          key={p.id}
+          className="fixed pointer-events-none rounded-full"
+          style={{
+            left: `${p.x}%`,
+            top: `${p.y}%`,
+            width: p.size,
+            height: p.size,
+            background: p.color,
+            boxShadow: `0 0 ${p.size * 2}px ${p.color}`,
+            animation: `float-particle ${2 + Math.random() * 3}s ease-in-out infinite`,
+            animationDelay: `${p.delay}s`,
+            opacity: 0.8,
+          }}
         />
-        <CapturedPanel
-          color="ice"
-          label="Ice Captured"
-          pieces={fireCaptured}
-          score={iceScore}
-        />
+      ))}
+
+      <div
+        className={`glass-panel rounded-2xl px-10 py-6 text-center relative overflow-hidden ${
+          playerLost ? 'game-over-lose' : 'game-over-win'
+        }`}
+        style={{
+          borderColor: isFire ? 'hsl(15, 90%, 55%, 0.6)' : 'hsl(210, 80%, 55%, 0.6)',
+          boxShadow: isFire
+            ? '0 0 60px hsl(15 90% 55% / 0.4), 0 0 120px hsl(15 90% 55% / 0.15)'
+            : '0 0 60px hsl(210 80% 55% / 0.4), 0 0 120px hsl(210 80% 55% / 0.15)',
+          animation: playerLost ? 'defeat-shake 0.5s ease-in-out, victory-glow 2s ease-in-out infinite 0.5s' : 'victory-glow 2s ease-in-out infinite',
+        }}
+      >
+        {/* Shimmer overlay */}
+        <div className="absolute inset-0 opacity-20 pointer-events-none"
+          style={{
+            background: `linear-gradient(90deg, transparent, ${isFire ? 'hsl(15, 90%, 55%)' : 'hsl(210, 80%, 55%)'}, transparent)`,
+            backgroundSize: '200% 100%',
+            animation: 'shimmer 3s linear infinite',
+          }} />
+
+        {/* Screen flash on game over */}
+        <div className="fixed inset-0 pointer-events-none z-50"
+          style={{
+            background: isFire
+              ? 'radial-gradient(circle, hsl(15 90% 55% / 0.3), transparent 70%)'
+              : 'radial-gradient(circle, hsl(210 80% 55% / 0.3), transparent 70%)',
+            animation: 'screen-flash 1s ease-out forwards',
+          }} />
+
+        <div className="relative z-10">
+          <div className="flex items-center justify-center gap-3 mb-3">
+            <Trophy size={32} className={`${isFire ? 'text-primary' : 'text-secondary'}`}
+              style={{ animation: 'trophy-bounce 0.6s ease-out' }} />
+            <p className="text-3xl md:text-4xl font-bold tracking-wider"
+              style={{ animation: 'text-reveal 0.8s ease-out' }}>
+              {checkmatedColor ? 'CHECKMATE!' : 'TIME OUT!'}
+            </p>
+            <Trophy size={32} className={`${isFire ? 'text-primary' : 'text-secondary'}`}
+              style={{ animation: 'trophy-bounce 0.6s ease-out 0.2s both' }} />
+          </div>
+
+          {/* Win/Lose label for PvAI */}
+          {gameMode === 'pvai' && (
+            <div className="flex items-center justify-center gap-2 mb-2"
+              style={{ animation: 'text-reveal 0.8s ease-out 0.3s both' }}>
+              <span className={`text-xl font-bold tracking-widest ${
+                playerWon ? 'text-green-500' : 'text-destructive'
+              }`}
+                style={{
+                  textShadow: playerWon
+                    ? '0 0 20px hsl(120 70% 50% / 0.5)'
+                    : '0 0 20px hsl(0 84% 50% / 0.5)',
+                }}>
+                {playerWon ? '🎉 VICTORY!' : '💀 DEFEAT'}
+              </span>
+            </div>
+          )}
+
+          <div className="flex items-center justify-center gap-2 mb-4">
+            {isFire ? <Flame size={20} className="text-primary" /> : <Snowflake size={20} className="text-secondary" />}
+            <p className={`text-lg font-bold ${isFire ? 'text-primary' : 'text-secondary'}`}>
+              {isFire ? 'Fire' : 'Ice'} Wins!
+            </p>
+          </div>
+          <button
+            onClick={onReset}
+            className="px-6 py-2.5 rounded-xl border border-border bg-card/80 text-foreground font-semibold hover:bg-muted transition-all hover:scale-105 flex items-center gap-2 mx-auto"
+          >
+            <RotateCcw size={16} />
+            Play Again
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -337,10 +487,8 @@ function CapturedPanel({ color, label, pieces, score }: {
   const Icon = isFire ? Flame : Snowflake;
   const textColor = isFire ? 'text-primary' : 'text-secondary';
   const borderColor = isFire ? 'hsl(15, 90%, 55%, 0.25)' : 'hsl(210, 80%, 55%, 0.25)';
-  // Captured pieces belong to the opposite color
   const capturedColor: PieceColor = isFire ? 'ice' : 'fire';
 
-  // Sort by value descending
   const pieceOrder: PieceType[] = ['queen', 'rook', 'bishop', 'knight', 'pawn'];
   const sorted = [...pieces].sort((a, b) => pieceOrder.indexOf(a.type) - pieceOrder.indexOf(b.type));
 

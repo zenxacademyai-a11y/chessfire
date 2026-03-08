@@ -56,7 +56,23 @@ function applyMoveResult(
 
   if (captured) setCapturedPieces(prev => [...prev, captured]);
 
-  if (isCheckmate(newBoard, nextTurn)) {
+  const isCm = isCheckmate(newBoard, nextTurn);
+  const isCk = !isCm && isInCheck(newBoard, nextTurn);
+
+  // Build move record
+  const notation = buildMoveNotation(movingPieceType, from, to, !!captured, isCk, isCm);
+  setMoveHistory(prev => [...prev, {
+    moveNumber: Math.floor(prev.length / 2) + 1,
+    color: currentTurn,
+    pieceType: movingPieceType,
+    from, to,
+    isCapture: !!captured,
+    isCheck: isCk,
+    isCheckmate: isCm,
+    notation,
+  }]);
+
+  if (isCm) {
     setMoveType('checkmate');
     setCheckmatedColor(nextTurn);
     setInCheck(nextTurn);
@@ -64,7 +80,7 @@ function applyMoveResult(
       for (let c = 0; c < 8; c++)
         if (newBoard[r][c]?.type === 'king' && newBoard[r][c]?.color === nextTurn)
           setKingInCheckPos({ row: r, col: c });
-  } else if (isInCheck(newBoard, nextTurn)) {
+  } else if (isCk) {
     setMoveType('check');
     setInCheck(nextTurn);
     for (let r = 0; r < 8; r++)

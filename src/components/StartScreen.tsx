@@ -294,60 +294,86 @@ export default function StartScreen({ onStart, onStartOnline, onStartTournament 
           </motion.div>
 
           <AnimatePresence mode="wait">
-            {!showOnline ? (
+            {!showOnline && !showTournament ? (
               <motion.div
                 key="modes"
-                className="flex flex-col sm:flex-row gap-4 md:gap-5"
+                className="flex flex-col items-center gap-4 md:gap-5"
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
                 transition={{ duration: 0.5, delay: 0.3 }}
               >
-                {/* PvP */}
-                <motion.button
-                  onClick={() => handleStart('pvp')}
-                  className="group relative px-7 py-4 md:px-9 md:py-5 rounded-2xl border border-zinc-700/60 bg-zinc-900/60 backdrop-blur-sm cursor-pointer overflow-hidden"
-                  whileHover={{ scale: 1.04, borderColor: 'hsl(15, 90%, 55%)' }}
-                  whileTap={{ scale: 0.97 }}
-                >
-                  <div className="absolute inset-0 bg-gradient-to-br from-orange-600/10 to-sky-600/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                  <div className="relative flex flex-col items-center gap-2">
-                    <Users className="w-7 h-7 md:w-8 md:h-8 text-zinc-300 group-hover:text-orange-400 transition-colors" />
-                    <span className="text-base md:text-lg font-bold text-zinc-200 tracking-wide">Local PvP</span>
-                    <span className="text-xs text-zinc-500">Same device</span>
-                  </div>
-                </motion.button>
+                <div className="flex flex-col sm:flex-row gap-4 md:gap-5">
+                  {/* PvP */}
+                  <motion.button
+                    onClick={() => handleStart('pvp')}
+                    className="group relative px-7 py-4 md:px-9 md:py-5 rounded-2xl border border-zinc-700/60 bg-zinc-900/60 backdrop-blur-sm cursor-pointer overflow-hidden"
+                    whileHover={{ scale: 1.04, borderColor: 'hsl(15, 90%, 55%)' }}
+                    whileTap={{ scale: 0.97 }}
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-br from-orange-600/10 to-sky-600/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                    <div className="relative flex flex-col items-center gap-2">
+                      <Users className="w-7 h-7 md:w-8 md:h-8 text-zinc-300 group-hover:text-orange-400 transition-colors" />
+                      <span className="text-base md:text-lg font-bold text-zinc-200 tracking-wide">Local PvP</span>
+                      <span className="text-xs text-zinc-500">Same device</span>
+                    </div>
+                  </motion.button>
 
-                {/* PvAI */}
-                <motion.button
-                  onClick={() => handleStart('pvai')}
-                  className="group relative px-7 py-4 md:px-9 md:py-5 rounded-2xl border border-zinc-700/60 bg-zinc-900/60 backdrop-blur-sm cursor-pointer overflow-hidden"
-                  whileHover={{ scale: 1.04, borderColor: 'hsl(210, 80%, 55%)' }}
-                  whileTap={{ scale: 0.97 }}
-                >
-                  <div className="absolute inset-0 bg-gradient-to-br from-sky-600/10 to-purple-600/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                  <div className="relative flex flex-col items-center gap-2">
-                    <Bot className="w-7 h-7 md:w-8 md:h-8 text-zinc-300 group-hover:text-sky-400 transition-colors" />
-                    <span className="text-base md:text-lg font-bold text-zinc-200 tracking-wide">vs AI</span>
-                    <span className="text-xs text-zinc-500">Challenge CPU</span>
-                  </div>
-                </motion.button>
+                  {/* PvAI */}
+                  <motion.button
+                    onClick={() => handleStart('pvai')}
+                    className="group relative px-7 py-4 md:px-9 md:py-5 rounded-2xl border border-zinc-700/60 bg-zinc-900/60 backdrop-blur-sm cursor-pointer overflow-hidden"
+                    whileHover={{ scale: 1.04, borderColor: 'hsl(210, 80%, 55%)' }}
+                    whileTap={{ scale: 0.97 }}
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-br from-sky-600/10 to-purple-600/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                    <div className="relative flex flex-col items-center gap-2">
+                      <Bot className="w-7 h-7 md:w-8 md:h-8 text-zinc-300 group-hover:text-sky-400 transition-colors" />
+                      <span className="text-base md:text-lg font-bold text-zinc-200 tracking-wide">vs AI</span>
+                      <span className="text-xs text-zinc-500">Challenge CPU</span>
+                    </div>
+                  </motion.button>
 
-                {/* Online */}
+                  {/* Online */}
+                  <motion.button
+                    onClick={() => setShowOnline(true)}
+                    className="group relative px-7 py-4 md:px-9 md:py-5 rounded-2xl border border-zinc-700/60 bg-zinc-900/60 backdrop-blur-sm cursor-pointer overflow-hidden"
+                    whileHover={{ scale: 1.04, borderColor: 'hsl(150, 70%, 50%)' }}
+                    whileTap={{ scale: 0.97 }}
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-br from-emerald-600/10 to-cyan-600/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                    <div className="relative flex flex-col items-center gap-2">
+                      <Globe className="w-7 h-7 md:w-8 md:h-8 text-zinc-300 group-hover:text-emerald-400 transition-colors" />
+                      <span className="text-base md:text-lg font-bold text-zinc-200 tracking-wide">Online</span>
+                      <span className="text-xs text-zinc-500">Invite a friend</span>
+                    </div>
+                  </motion.button>
+                </div>
+
+                {/* Tournament button */}
                 <motion.button
-                  onClick={() => setShowOnline(true)}
-                  className="group relative px-7 py-4 md:px-9 md:py-5 rounded-2xl border border-zinc-700/60 bg-zinc-900/60 backdrop-blur-sm cursor-pointer overflow-hidden"
-                  whileHover={{ scale: 1.04, borderColor: 'hsl(150, 70%, 50%)' }}
+                  onClick={() => setShowTournament(true)}
+                  className="group relative px-10 py-3 md:px-14 md:py-4 rounded-2xl border border-yellow-500/30 bg-zinc-900/60 backdrop-blur-sm cursor-pointer overflow-hidden"
+                  whileHover={{ scale: 1.04, borderColor: 'hsl(45, 90%, 50%)' }}
                   whileTap={{ scale: 0.97 }}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.5 }}
                 >
-                  <div className="absolute inset-0 bg-gradient-to-br from-emerald-600/10 to-cyan-600/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                  <div className="relative flex flex-col items-center gap-2">
-                    <Globe className="w-7 h-7 md:w-8 md:h-8 text-zinc-300 group-hover:text-emerald-400 transition-colors" />
-                    <span className="text-base md:text-lg font-bold text-zinc-200 tracking-wide">Online</span>
-                    <span className="text-xs text-zinc-500">Invite a friend</span>
+                  <div className="absolute inset-0 bg-gradient-to-br from-yellow-600/5 to-amber-600/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                  <div className="relative flex items-center gap-3">
+                    <Trophy className="w-5 h-5 md:w-6 md:h-6 text-yellow-500/70 group-hover:text-yellow-400 transition-colors" />
+                    <span className="text-sm md:text-base font-bold text-zinc-300 group-hover:text-yellow-400 tracking-wide transition-colors">Tournament</span>
+                    <span className="text-[10px] text-zinc-600 font-medium">4-8 players</span>
                   </div>
                 </motion.button>
               </motion.div>
+            ) : showTournament ? (
+              <TournamentSetup
+                key="tournament"
+                onBack={() => setShowTournament(false)}
+                onStart={handleStartTournament}
+              />
             ) : (
               <OnlinePanel
                 key="online"

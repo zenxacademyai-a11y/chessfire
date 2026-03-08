@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { Board, Position, PieceColor, PieceType, ChessPiece, createInitialBoard, getValidMoves, movePiece, isInCheck, isCheckmate } from '@/utils/chessLogic';
 import { getBestMove } from '@/utils/chessAI';
+import { buildMoveNotation, type MoveRecord } from '@/components/MoveHistoryPanel';
 
 export type GameMode = 'pvp' | 'pvai';
 export type AIDifficulty = 'easy' | 'medium' | 'hard';

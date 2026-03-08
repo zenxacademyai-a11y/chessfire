@@ -6,6 +6,7 @@ import { useOnlineGame } from '@/hooks/useOnlineGame';
 interface StartScreenProps {
   onStart: (mode: 'pvp' | 'pvai') => void;
   onStartOnline: (roomId: string, playerColor: 'fire' | 'ice') => void;
+  onStartTournament: (size: 4 | 8, names: string[]) => void;
 }
 
 function OnlinePanel({ onBack, onStartOnline, autoJoinCode }: { onBack: () => void; onStartOnline: (roomId: string, playerColor: 'fire' | 'ice') => void; autoJoinCode?: string | null }) {

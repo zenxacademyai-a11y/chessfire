@@ -165,28 +165,37 @@ export default function GameUI({
           </button>
         </div>
 
-        {/* Desktop controls */}
+        {/* Desktop controls — hide mode toggles during online */}
         <div className="pointer-events-auto hidden md:flex items-center gap-2">
-          {/* Mode selector */}
-          <div className="glass-panel rounded-xl overflow-hidden flex">
-            <button
-              onClick={() => onModeChange('pvp')}
-              className={`px-3 py-2 text-xs font-semibold tracking-wide transition-all flex items-center gap-1.5 ${
-                gameMode === 'pvp' ? 'bg-primary/15 text-primary shadow-inner' : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
-              }`}
-            >
-              <Users size={14} /> PvP
-            </button>
-            <div className="w-px bg-border/50" />
-            <button
-              onClick={() => onModeChange('pvai')}
-              className={`px-3 py-2 text-xs font-semibold tracking-wide transition-all flex items-center gap-1.5 ${
-                gameMode === 'pvai' ? 'bg-secondary/15 text-secondary shadow-inner' : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
-              }`}
-            >
-              <Bot size={14} /> vs AI
-            </button>
-          </div>
+          {gameMode === 'online' ? (
+            <div className="glass-panel rounded-xl px-3 py-2 flex items-center gap-1.5">
+              <Globe size={14} className="text-emerald-400" />
+              <span className="text-xs font-semibold text-emerald-400 tracking-wide">ONLINE</span>
+              <span className="text-xs text-muted-foreground ml-1">
+                {currentTurn === onlinePlayerColor ? '— Your turn' : '— Waiting...'}
+              </span>
+            </div>
+          ) : (
+            <div className="glass-panel rounded-xl overflow-hidden flex">
+              <button
+                onClick={() => onModeChange('pvp')}
+                className={`px-3 py-2 text-xs font-semibold tracking-wide transition-all flex items-center gap-1.5 ${
+                  gameMode === 'pvp' ? 'bg-primary/15 text-primary shadow-inner' : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                }`}
+              >
+                <Users size={14} /> PvP
+              </button>
+              <div className="w-px bg-border/50" />
+              <button
+                onClick={() => onModeChange('pvai')}
+                className={`px-3 py-2 text-xs font-semibold tracking-wide transition-all flex items-center gap-1.5 ${
+                  gameMode === 'pvai' ? 'bg-secondary/15 text-secondary shadow-inner' : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                }`}
+              >
+                <Bot size={14} /> vs AI
+              </button>
+            </div>
+          )}
 
           {/* AI Difficulty selector */}
           {gameMode === 'pvai' && (

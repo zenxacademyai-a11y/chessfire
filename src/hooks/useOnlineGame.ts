@@ -29,6 +29,7 @@ interface OnlineGameState {
   roomId: string | null;
   playerColor: 'fire' | 'ice' | null;
   error: string | null;
+  opponentDisconnected: boolean;
 }
 
 export function useOnlineGame() {
@@ -38,6 +39,7 @@ export function useOnlineGame() {
     roomId: null,
     playerColor: null,
     error: null,
+    opponentDisconnected: false,
   });
   const sessionId = useRef(getSessionId());
 
@@ -69,6 +71,7 @@ export function useOnlineGame() {
       roomId: data.id,
       playerColor: 'fire',
       error: null,
+      opponentDisconnected: false,
     });
   }, []);
 
@@ -117,6 +120,7 @@ export function useOnlineGame() {
       roomId: room.id,
       playerColor: 'ice',
       error: null,
+      opponentDisconnected: false,
     });
   }, []);
 
@@ -127,8 +131,46 @@ export function useOnlineGame() {
       roomId: null,
       playerColor: null,
       error: null,
+      opponentDisconnected: false,
     });
   }, []);
+
+  // Presence-based disconnect detection
+  useEffect(() => {
+    if (state.status !== 'playing' || !state.roomId || !state.playerColor) return;
+
+    const presenceChannel = supabase.channel(`presence-${state.roomId}`, {
+      config: { presence: { key: sessionId.current } },
+    });
+
+    let opponentSeen = false;
+
+    presenceChannel
+      .on('presence', { event: 'sync' }, () => {
+        const presenceState = presenceChannel.presenceState();
+        const keys = Object.keys(presenceState);
+        const otherPlayers = keys.filter(k => k !== sessionId.current);
+        
+        if (otherPlayers.length > 0) {
+          opponentSeen = true;
+          setState(s => s.opponentDisconnected ? { ...s, opponentDisconnected: false } : s);
+        } else if (opponentSeen) {
+          setState(s => ({ ...s, opponentDisconnected: true }));
+        }
+      })
+      .subscribe(async (status) => {
+        if (status === 'SUBSCRIBED') {
+          await presenceChannel.track({
+            color: state.playerColor,
+            online_at: new Date().toISOString(),
+          });
+        }
+      });
+
+    return () => {
+      supabase.removeChannel(presenceChannel);
+    };
+  }, [state.status, state.roomId, state.playerColor]);
 
   // Listen for opponent joining when waiting
   useEffect(() => {

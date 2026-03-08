@@ -89,12 +89,13 @@ interface GameUIProps {
   onHint: () => void;
   hintLoading: boolean;
   onlinePlayerColor?: 'fire' | 'ice' | null;
+  opponentDisconnected?: boolean;
 }
 
 export default function GameUI({
   currentTurn, capturedPieces, onReset, inCheck, checkmatedColor,
   fireTime, iceTime, timedOutColor, gameMode, aiThinking, onModeChange,
-  aiDifficulty, onDifficultyChange, onHint, hintLoading, onlinePlayerColor
+  aiDifficulty, onDifficultyChange, onHint, hintLoading, onlinePlayerColor, opponentDisconnected
 }: GameUIProps) {
   const fireCaptured = capturedPieces.filter(p => p.color === 'fire');
   const iceCaptured = capturedPieces.filter(p => p.color === 'ice');
@@ -361,6 +362,26 @@ export default function GameUI({
       {/* ============ GAME OVER OVERLAY ============ */}
       {gameOver && winner && (
         <GameOverOverlay winner={winner} checkmatedColor={checkmatedColor} onReset={onReset} playerWon={playerWon} playerLost={playerLost} gameMode={gameMode} />
+      )}
+
+      {/* ============ OPPONENT DISCONNECTED BANNER ============ */}
+      {opponentDisconnected && !gameOver && (
+        <div className="flex justify-center mt-2 md:mt-4 pointer-events-auto px-4">
+          <div className="glass-panel rounded-xl px-4 md:px-6 py-2.5 md:py-3 flex items-center gap-2 md:gap-3"
+            style={{
+              borderColor: 'hsl(45, 90%, 50%, 0.5)',
+              boxShadow: '0 0 30px hsl(45 90% 50% / 0.2)',
+              animation: 'danger-pulse 2s ease-in-out infinite',
+            }}>
+            <AlertTriangle size={16} className="text-yellow-500 flex-shrink-0" />
+            <span className="text-xs md:text-sm font-bold text-yellow-500 tracking-wide">
+              Opponent disconnected
+            </span>
+            <span className="text-[10px] md:text-xs text-muted-foreground">
+              Waiting for reconnect...
+            </span>
+          </div>
+        </div>
       )}
 
       {/* ============ CAPTURED PIECES - BOTTOM ============ */}

@@ -9,9 +9,13 @@ import { useChessGame } from '@/hooks/useChessGame';
 import StartScreen from '@/components/StartScreen';
 import { useChessClock } from '@/hooks/useChessClock';
 import { useSound } from '@/components/SoundManager';
+import { useTournament } from '@/hooks/useTournament';
+import TournamentBracket from '@/components/TournamentBracket';
+import type { TournamentSize } from '@/hooks/useTournament';
 
 const Index = () => {
   const [gameStarted, setGameStarted] = useState(false);
+  const [showBracket, setShowBracket] = useState(false);
   const {
     board, selectedPos, validMoves, currentTurn, capturedPieces, lastMove, moveType,
     inCheck, checkmatedColor, animatingPiece, kingInCheckPos,
@@ -23,17 +27,23 @@ const Index = () => {
   } = useChessGame();
   const { fireTime, iceTime, timedOutColor, resetClock } = useChessClock(currentTurn, checkmatedColor);
   const { playMove, playCapture, playSelect, playCheck, playCheckmate, playPieceMove, playPieceCapture, playVictory, playDefeat } = useSound();
+  const { tournament, startTournament, reportMatchResult, resetTournament } = useTournament();
   const prevMoveRef = useRef(lastMove);
   const prevGameOverRef = useRef(false);
 
   const handleReset = useCallback(() => {
     resetGame();
     resetClock();
-    setGameStarted(false);
-  }, [resetGame, resetClock]);
+    if (tournament.active) {
+      setShowBracket(true);
+      setGameStarted(false);
+    } else {
+      setGameStarted(false);
+    }
+  }, [resetGame, resetClock, tournament.active]);
 
   const handleModeChange = useCallback((mode: 'pvp' | 'pvai' | 'online') => {
-    if (mode === 'online') return; // Can't switch to online from in-game
+    if (mode === 'online') return;
     toggleGameMode(mode);
     resetClock();
   }, [toggleGameMode, resetClock]);
@@ -51,6 +61,42 @@ const Index = () => {
     setGameStarted(true);
   }, [startOnlineGame, resetClock]);
 
+  const handleStartTournament = useCallback((size: TournamentSize, names: string[]) => {
+    startTournament(size, names);
+    setShowBracket(true);
+  }, [startTournament]);
+
+  const handleStartTournamentMatch = useCallback(() => {
+    toggleGameMode('pvp');
+    resetGame();
+    resetClock();
+    setShowBracket(false);
+    setGameStarted(true);
+  }, [toggleGameMode, resetGame, resetClock]);
+
+  const handleCloseBracket = useCallback(() => {
+    resetTournament();
+    setShowBracket(false);
+    setGameStarted(false);
+  }, [resetTournament]);
+
+  // Report tournament match result when game ends
+  const gameOver = !!checkmatedColor || !!timedOutColor;
+  const winner = checkmatedColor === 'fire' ? 'ice' : checkmatedColor === 'ice' ? 'fire' : timedOutColor === 'fire' ? 'ice' : timedOutColor === 'ice' ? 'fire' : null;
+  const playerWon = gameOver && winner === 'fire' && gameMode === 'pvai';
+
+  useEffect(() => {
+    if (gameOver && winner && tournament.active && tournament.currentMatch) {
+      // Small delay so player sees the result
+      const timeout = setTimeout(() => {
+        reportMatchResult(winner);
+        setShowBracket(true);
+        setGameStarted(false);
+      }, 3000);
+      return () => clearTimeout(timeout);
+    }
+  }, [gameOver, winner, tournament.active, tournament.currentMatch, reportMatchResult]);
+
   // Move sounds
   useEffect(() => {
     if (lastMove && lastMove !== prevMoveRef.current) {
@@ -64,10 +110,6 @@ const Index = () => {
   }, [lastMove, moveType, lastMovedPieceType]);
 
   // Win/lose sounds
-  const gameOver = !!checkmatedColor || !!timedOutColor;
-  const winner = checkmatedColor === 'fire' ? 'ice' : checkmatedColor === 'ice' ? 'fire' : timedOutColor === 'fire' ? 'ice' : timedOutColor === 'ice' ? 'fire' : null;
-  const playerWon = gameOver && winner === 'fire' && gameMode === 'pvai';
-
   useEffect(() => {
     if (gameOver && !prevGameOverRef.current && winner) {
       if (gameMode === 'pvai') {
@@ -87,7 +129,29 @@ const Index = () => {
   return (
     <div className="relative w-full h-screen bg-background overflow-hidden">
       {/* Start screen */}
-      {!gameStarted && <StartScreen onStart={handleStart} onStartOnline={handleStartOnline} />}
+      {!gameStarted && !showBracket && (
+        <StartScreen onStart={handleStart} onStartOnline={handleStartOnline} onStartTournament={handleStartTournament} />
+      )}
+
+      {/* Tournament bracket overlay */}
+      {showBracket && (
+        <TournamentBracket
+          tournament={tournament}
+          onStartMatch={tournament.currentMatch && !tournament.champion ? handleStartTournamentMatch : undefined}
+          onClose={handleCloseBracket}
+        />
+      )}
+
+      {/* Tournament match info banner */}
+      {gameStarted && tournament.active && tournament.currentMatch && (
+        <div className="absolute top-14 md:top-5 left-1/2 -translate-x-1/2 pointer-events-auto z-30">
+          <div className="glass-panel rounded-lg md:rounded-xl px-3 md:px-5 py-1.5 md:py-2 flex items-center gap-2 bg-yellow-500/5 border-yellow-500/20">
+            <span className="text-[10px] md:text-xs font-bold text-yellow-500 tracking-wide">
+              🏆 {tournament.currentMatch.player1?.name} vs {tournament.currentMatch.player2?.name}
+            </span>
+          </div>
+        </div>
+      )}
 
       {/* Confetti on player victory */}
       <ConfettiExplosion active={playerWon} />
@@ -115,7 +179,7 @@ const Index = () => {
       />
 
       {/* Undo button for PvP */}
-      {gameMode === 'pvp' && !checkmatedColor && !timedOutColor && moveHistory.length > 0 && (
+      {gameMode === 'pvp' && !checkmatedColor && !timedOutColor && moveHistory.length > 0 && !tournament.active && (
         <div className="absolute left-2 md:left-3 bottom-20 md:bottom-24 pointer-events-auto z-20">
           <button
             onClick={undoMove}

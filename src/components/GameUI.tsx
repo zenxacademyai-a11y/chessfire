@@ -95,7 +95,7 @@ interface GameUIProps {
 export default function GameUI({
   currentTurn, capturedPieces, onReset, inCheck, checkmatedColor,
   fireTime, iceTime, timedOutColor, gameMode, aiThinking, onModeChange,
-  aiDifficulty, onDifficultyChange, onHint, hintLoading, onlinePlayerColor
+  aiDifficulty, onDifficultyChange, onHint, hintLoading, onlinePlayerColor, opponentDisconnected
 }: GameUIProps) {
   const fireCaptured = capturedPieces.filter(p => p.color === 'fire');
   const iceCaptured = capturedPieces.filter(p => p.color === 'ice');

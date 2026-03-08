@@ -526,10 +526,18 @@ function GameOverOverlay({ winner, checkmatedColor, onReset, playerWon, playerLo
               {isFire ? 'Fire' : 'Ice'} Wins!
             </p>
           </div>
-          <button onClick={onReset}
-            className="px-5 md:px-6 py-2 md:py-2.5 rounded-xl border border-border bg-card/80 text-foreground font-semibold hover:bg-muted transition-all hover:scale-105 flex items-center gap-2 mx-auto text-sm md:text-base">
-            <RotateCcw size={14} /> Play Again
-          </button>
+          <div className="flex items-center gap-3 justify-center">
+            {gameMode === 'online' && onRematch && (
+              <button onClick={onRematch}
+                className="px-5 md:px-6 py-2 md:py-2.5 rounded-xl border border-primary/50 bg-primary/10 text-primary font-semibold hover:bg-primary/20 transition-all hover:scale-105 flex items-center gap-2 text-sm md:text-base">
+                <Swords size={14} /> Rematch
+              </button>
+            )}
+            <button onClick={onReset}
+              className="px-5 md:px-6 py-2 md:py-2.5 rounded-xl border border-border bg-card/80 text-foreground font-semibold hover:bg-muted transition-all hover:scale-105 flex items-center gap-2 text-sm md:text-base">
+              <RotateCcw size={14} /> {gameMode === 'online' ? 'Leave' : 'Play Again'}
+            </button>
+          </div>
         </div>
       </div>
     </div>

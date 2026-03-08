@@ -439,12 +439,28 @@ export function useChessGame() {
     if (gameMode !== 'online' || !onlineConfig) return;
     const opponentColor: PieceColor = onlineConfig.playerColor === 'fire' ? 'ice' : 'fire';
     setCheckmatedColor(opponentColor);
-    // Update room status
     await supabase
       .from('game_rooms')
       .update({ status: 'finished', winner: onlineConfig.playerColor })
       .eq('id', onlineConfig.roomId);
   }, [gameMode, onlineConfig]);
+
+  const rematchOnline = useCallback(async () => {
+    if (gameMode !== 'online' || !onlineConfig) return;
+    const freshBoard = createInitialBoard();
+    resetGame();
+    // Reset the room in DB with fresh board
+    await supabase
+      .from('game_rooms')
+      .update({
+        board_state: freshBoard as unknown as Json,
+        current_turn: 'fire',
+        last_move: null,
+        status: 'playing',
+        winner: null,
+      })
+      .eq('id', onlineConfig.roomId);
+  }, [gameMode, onlineConfig, resetGame]);
 
   return {
     board: displayBoard, selectedPos, validMoves, currentTurn, capturedPieces, lastMove, moveType,
@@ -453,6 +469,6 @@ export function useChessGame() {
     hintMove, hintLoading, moveHistory, viewingMoveIndex,
     onlineConfig, opponentDisconnected,
     handleSquareClick, resetGame, toggleGameMode, setAiDifficulty, getHint,
-    undoMove, viewMove, exitReplay, startOnlineGame, claimVictory,
+    undoMove, viewMove, exitReplay, startOnlineGame, claimVictory, rematchOnline,
   };
 }

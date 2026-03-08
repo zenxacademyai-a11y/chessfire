@@ -1,5 +1,5 @@
 import { useMemo, useState, useEffect } from 'react';
-import { Crown, Swords, Shield, RotateCcw, Users, Bot, Brain, Clock, Flame, Snowflake, Trophy, AlertTriangle, Volume2, VolumeX, Zap, Target, Skull } from 'lucide-react';
+import { Crown, Swords, Shield, RotateCcw, Users, Bot, Brain, Clock, Flame, Snowflake, Trophy, AlertTriangle, Volume2, VolumeX, Zap, Target, Skull, Lightbulb } from 'lucide-react';
 import type { PieceColor, PieceType, ChessPiece } from '@/utils/chessLogic';
 import { formatTime } from '@/hooks/useChessClock';
 import type { GameMode, AIDifficulty } from '@/hooks/useChessGame';
@@ -86,12 +86,14 @@ interface GameUIProps {
   onModeChange: (mode: GameMode) => void;
   aiDifficulty: AIDifficulty;
   onDifficultyChange: (d: AIDifficulty) => void;
+  onHint: () => void;
+  hintLoading: boolean;
 }
 
 export default function GameUI({
   currentTurn, capturedPieces, onReset, inCheck, checkmatedColor,
   fireTime, iceTime, timedOutColor, gameMode, aiThinking, onModeChange,
-  aiDifficulty, onDifficultyChange
+  aiDifficulty, onDifficultyChange, onHint, hintLoading
 }: GameUIProps) {
   const fireCaptured = capturedPieces.filter(p => p.color === 'fire');
   const iceCaptured = capturedPieces.filter(p => p.color === 'ice');
@@ -223,6 +225,23 @@ export default function GameUI({
                 {currentTurn === 'fire' ? 'Fire' : 'Ice'} Turn
               </span>
             </div>
+          )}
+
+          {/* Hint button */}
+          {!gameOver && (
+            <button
+              onClick={onHint}
+              disabled={hintLoading || aiThinking}
+              className={`glass-panel rounded-xl px-3 py-2 flex items-center gap-1.5 text-sm font-medium transition-all group ${
+                hintLoading
+                  ? 'text-yellow-500 animate-pulse'
+                  : 'text-muted-foreground hover:text-yellow-500 hover:bg-yellow-500/10'
+              }`}
+              style={hintLoading ? { borderColor: 'hsl(45 90% 50% / 0.4)', boxShadow: '0 0 15px hsl(45 90% 50% / 0.2)' } : {}}
+            >
+              <Lightbulb size={14} className={hintLoading ? 'animate-spin' : 'group-hover:scale-110 transition-transform'} />
+              <span className="hidden md:inline">{hintLoading ? 'Analyzing...' : 'Hint'}</span>
+            </button>
           )}
 
           {/* Reset */}

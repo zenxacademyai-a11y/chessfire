@@ -258,6 +258,12 @@ export function useChessGame() {
         (payload) => {
           const updated = payload.new as any;
           
+          // Detect rematch (opponent reset the room)
+          if (updated.status === 'playing' && !updated.last_move && updated.current_turn === 'fire') {
+            resetGame();
+            return;
+          }
+          
           // Only process if it's now our turn (meaning opponent just moved)
           if (updated.current_turn === onlineConfig.playerColor && updated.last_move && !isApplyingRemoteMove.current) {
             isApplyingRemoteMove.current = true;
@@ -439,12 +445,28 @@ export function useChessGame() {
     if (gameMode !== 'online' || !onlineConfig) return;
     const opponentColor: PieceColor = onlineConfig.playerColor === 'fire' ? 'ice' : 'fire';
     setCheckmatedColor(opponentColor);
-    // Update room status
     await supabase
       .from('game_rooms')
       .update({ status: 'finished', winner: onlineConfig.playerColor })
       .eq('id', onlineConfig.roomId);
   }, [gameMode, onlineConfig]);
+
+  const rematchOnline = useCallback(async () => {
+    if (gameMode !== 'online' || !onlineConfig) return;
+    const freshBoard = createInitialBoard();
+    resetGame();
+    // Reset the room in DB with fresh board
+    await supabase
+      .from('game_rooms')
+      .update({
+        board_state: freshBoard as unknown as Json,
+        current_turn: 'fire',
+        last_move: null,
+        status: 'playing',
+        winner: null,
+      })
+      .eq('id', onlineConfig.roomId);
+  }, [gameMode, onlineConfig, resetGame]);
 
   return {
     board: displayBoard, selectedPos, validMoves, currentTurn, capturedPieces, lastMove, moveType,
@@ -453,6 +475,6 @@ export function useChessGame() {
     hintMove, hintLoading, moveHistory, viewingMoveIndex,
     onlineConfig, opponentDisconnected,
     handleSquareClick, resetGame, toggleGameMode, setAiDifficulty, getHint,
-    undoMove, viewMove, exitReplay, startOnlineGame, claimVictory,
+    undoMove, viewMove, exitReplay, startOnlineGame, claimVictory, rematchOnline,
   };
 }

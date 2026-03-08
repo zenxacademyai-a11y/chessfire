@@ -19,7 +19,7 @@ const Index = () => {
     hintMove, hintLoading, moveHistory, viewingMoveIndex,
     onlineConfig, opponentDisconnected,
     handleSquareClick, resetGame, toggleGameMode, setAiDifficulty, getHint,
-    undoMove, viewMove, exitReplay, startOnlineGame, claimVictory
+    undoMove, viewMove, exitReplay, startOnlineGame, claimVictory, rematchOnline
   } = useChessGame();
   const { fireTime, iceTime, timedOutColor, resetClock } = useChessClock(currentTurn, checkmatedColor);
   const { playMove, playCapture, playSelect, playCheck, playCheckmate, playPieceMove, playPieceCapture, playVictory, playDefeat } = useSound();
@@ -111,6 +111,7 @@ const Index = () => {
         onlinePlayerColor={onlineConfig?.playerColor}
         opponentDisconnected={opponentDisconnected}
         onClaimVictory={claimVictory}
+        onRematch={rematchOnline}
       />
 
       {/* Undo button for PvP */}

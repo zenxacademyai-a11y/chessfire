@@ -17,8 +17,9 @@ const Index = () => {
     inCheck, checkmatedColor, animatingPiece, kingInCheckPos,
     gameMode, aiThinking, lastMovedPieceType, aiDifficulty,
     hintMove, hintLoading, moveHistory, viewingMoveIndex,
+    onlineConfig,
     handleSquareClick, resetGame, toggleGameMode, setAiDifficulty, getHint,
-    undoMove, viewMove, exitReplay
+    undoMove, viewMove, exitReplay, startOnlineGame
   } = useChessGame();
   const { fireTime, iceTime, timedOutColor, resetClock } = useChessClock(currentTurn, checkmatedColor);
   const { playMove, playCapture, playSelect, playCheck, playCheckmate, playPieceMove, playPieceCapture, playVictory, playDefeat } = useSound();

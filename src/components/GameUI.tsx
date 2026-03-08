@@ -111,7 +111,19 @@ export default function GameUI({
   const playerLost = gameOver && winner === 'ice' && gameMode === 'pvai';
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [disconnectSeconds, setDisconnectSeconds] = useState(0);
 
+  // Track how long opponent has been disconnected
+  useEffect(() => {
+    if (!opponentDisconnected) {
+      setDisconnectSeconds(0);
+      return;
+    }
+    const interval = setInterval(() => {
+      setDisconnectSeconds(s => s + 1);
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [opponentDisconnected]);
   return (
     <div className="absolute top-0 left-0 right-0 bottom-0 z-10 pointer-events-none">
 

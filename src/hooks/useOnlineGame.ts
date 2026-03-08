@@ -39,6 +39,7 @@ export function useOnlineGame() {
     roomId: null,
     playerColor: null,
     error: null,
+    opponentDisconnected: false,
   });
   const sessionId = useRef(getSessionId());
 

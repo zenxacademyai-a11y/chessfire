@@ -17,8 +17,8 @@ interface ChessBoard3DProps {
   hintMove?: { from: Position; to: Position } | null;
 }
 
-function BoardSquare({ row, col, isLight, isSelected, isValidMove, isKingInCheck, onClick }: {
-  row: number; col: number; isLight: boolean; isSelected: boolean; isValidMove: boolean; isKingInCheck: boolean; onClick: () => void;
+function BoardSquare({ row, col, isLight, isSelected, isValidMove, isKingInCheck, isHintFrom, isHintTo, onClick }: {
+  row: number; col: number; isLight: boolean; isSelected: boolean; isValidMove: boolean; isKingInCheck: boolean; isHintFrom: boolean; isHintTo: boolean; onClick: () => void;
 }) {
   const meshRef = useRef<THREE.Mesh>(null);
   const x = col - 3.5;
@@ -34,6 +34,14 @@ function BoardSquare({ row, col, isLight, isSelected, isValidMove, isKingInCheck
     color = '#cc2200';
     emissive = '#ff0000';
     emissiveIntensity = 0.6;
+  } else if (isHintFrom) {
+    color = '#44aaff';
+    emissive = '#2288ff';
+    emissiveIntensity = 0.4;
+  } else if (isHintTo) {
+    color = '#ffaa00';
+    emissive = '#ff8800';
+    emissiveIntensity = 0.4;
   } else if (isSelected) {
     color = '#ffcc44';
     emissive = '#ffaa00';
@@ -52,6 +60,9 @@ function BoardSquare({ row, col, isLight, isSelected, isValidMove, isKingInCheck
     }
     if (isKingInCheck) {
       mat.emissiveIntensity = 0.4 + Math.sin(state.clock.elapsedTime * 5) * 0.3;
+    }
+    if (isHintFrom || isHintTo) {
+      mat.emissiveIntensity = 0.3 + Math.sin(state.clock.elapsedTime * 4) * 0.25;
     }
   });
 

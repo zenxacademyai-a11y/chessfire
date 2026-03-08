@@ -387,10 +387,7 @@ export default function ChessBoard3D({ board, selectedPos, validMoves, onSquareC
       )}
 
       {animatingPiece && (
-        <AnimatingPieceComponent
-          anim={animatingPiece}
-          duration={animatingPiece.isKnight ? 600 : 400}
-        />
+        <AnimatingPieceComponent anim={animatingPiece} />
       )}
 
       <RealisticFire />

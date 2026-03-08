@@ -258,8 +258,8 @@ export function useChessGame() {
         (payload) => {
           const updated = payload.new as any;
           
-          // Detect rematch (opponent reset the room)
-          if (updated.status === 'playing' && !updated.last_move && updated.current_turn === 'fire') {
+          // Detect rematch (opponent reset the room) - board is fresh and no last_move
+          if (updated.status === 'playing' && !updated.last_move && updated.current_turn === 'fire' && !isApplyingRemoteMove.current) {
             resetGame();
             return;
           }
@@ -269,14 +269,17 @@ export function useChessGame() {
             isApplyingRemoteMove.current = true;
             const move = updated.last_move as { from: Position; to: Position };
             
-            // Execute the opponent's move with animation
+            // Use the board state from DB to avoid stale ref issues
+            const remoteBoard = updated.board_state as unknown as Board;
             const opponentColor: PieceColor = onlineConfig.playerColor === 'fire' ? 'ice' : 'fire';
+            
+            // Execute the opponent's move with animation on our current local board
             executeMove(move.from, move.to, boardRef.current, opponentColor);
             
             // Reset flag after animation completes
             setTimeout(() => {
               isApplyingRemoteMove.current = false;
-            }, 1200);
+            }, 1500);
           }
         }
       )

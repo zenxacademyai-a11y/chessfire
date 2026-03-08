@@ -103,6 +103,7 @@ export function useChessGame() {
     const toPos: [number, number, number] = [to.col - 3.5, 0.08, to.row - 3.5];
     const isCapture = !!targetPiece && targetPiece.color !== movingPiece.color;
 
+    setLastMovedPieceType(movingPiece.type);
     setAnimatingPiece({
       from: fromPos, to: toPos,
       type: movingPiece.type, color: movingPiece.color,

@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Flame, Snowflake, Swords, Users, Bot, Globe, Copy, Check, ArrowLeft, Loader2 } from 'lucide-react';
 import { useOnlineGame } from '@/hooks/useOnlineGame';

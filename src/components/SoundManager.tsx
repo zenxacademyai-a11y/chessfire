@@ -11,7 +11,7 @@ interface SoundState {
 
 export const useSoundStore = create<SoundState>((set) => ({
   volume: 0.7,
-  muted: false,
+  muted: true,
   setVolume: (v) => set({ volume: v }),
   toggleMute: () => set((s) => ({ muted: !s.muted })),
 }));

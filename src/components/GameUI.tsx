@@ -90,12 +90,13 @@ interface GameUIProps {
   hintLoading: boolean;
   onlinePlayerColor?: 'fire' | 'ice' | null;
   opponentDisconnected?: boolean;
+  onClaimVictory?: () => void;
 }
 
 export default function GameUI({
   currentTurn, capturedPieces, onReset, inCheck, checkmatedColor,
   fireTime, iceTime, timedOutColor, gameMode, aiThinking, onModeChange,
-  aiDifficulty, onDifficultyChange, onHint, hintLoading, onlinePlayerColor, opponentDisconnected
+  aiDifficulty, onDifficultyChange, onHint, hintLoading, onlinePlayerColor, opponentDisconnected, onClaimVictory
 }: GameUIProps) {
   const fireCaptured = capturedPieces.filter(p => p.color === 'fire');
   const iceCaptured = capturedPieces.filter(p => p.color === 'ice');
@@ -110,7 +111,19 @@ export default function GameUI({
   const playerLost = gameOver && winner === 'ice' && gameMode === 'pvai';
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [disconnectSeconds, setDisconnectSeconds] = useState(0);
 
+  // Track how long opponent has been disconnected
+  useEffect(() => {
+    if (!opponentDisconnected) {
+      setDisconnectSeconds(0);
+      return;
+    }
+    const interval = setInterval(() => {
+      setDisconnectSeconds(s => s + 1);
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [opponentDisconnected]);
   return (
     <div className="absolute top-0 left-0 right-0 bottom-0 z-10 pointer-events-none">
 
@@ -367,19 +380,31 @@ export default function GameUI({
       {/* ============ OPPONENT DISCONNECTED BANNER ============ */}
       {opponentDisconnected && !gameOver && (
         <div className="flex justify-center mt-2 md:mt-4 pointer-events-auto px-4">
-          <div className="glass-panel rounded-xl px-4 md:px-6 py-2.5 md:py-3 flex items-center gap-2 md:gap-3"
+          <div className="glass-panel rounded-xl px-4 md:px-6 py-2.5 md:py-3 flex flex-col items-center gap-2"
             style={{
               borderColor: 'hsl(45, 90%, 50%, 0.5)',
               boxShadow: '0 0 30px hsl(45 90% 50% / 0.2)',
               animation: 'danger-pulse 2s ease-in-out infinite',
             }}>
-            <AlertTriangle size={16} className="text-yellow-500 flex-shrink-0" />
-            <span className="text-xs md:text-sm font-bold text-yellow-500 tracking-wide">
-              Opponent disconnected
-            </span>
-            <span className="text-[10px] md:text-xs text-muted-foreground">
-              Waiting for reconnect...
-            </span>
+            <div className="flex items-center gap-2 md:gap-3">
+              <AlertTriangle size={16} className="text-yellow-500 flex-shrink-0" />
+              <span className="text-xs md:text-sm font-bold text-yellow-500 tracking-wide">
+                Opponent disconnected
+              </span>
+              <span className="text-[10px] md:text-xs text-muted-foreground">
+                {disconnectSeconds < 60
+                  ? `Reconnect in ${60 - disconnectSeconds}s...`
+                  : 'Timed out'}
+              </span>
+            </div>
+            {disconnectSeconds >= 60 && onClaimVictory && (
+              <button
+                onClick={onClaimVictory}
+                className="px-4 py-1.5 rounded-lg border border-primary/50 bg-primary/10 text-primary text-xs md:text-sm font-bold hover:bg-primary/20 transition-all hover:scale-105"
+              >
+                🏆 Claim Victory
+              </button>
+            )}
           </div>
         </div>
       )}

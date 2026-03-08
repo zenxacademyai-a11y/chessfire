@@ -1,7 +1,8 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Flame, Snowflake, Swords, Users, Bot, Globe, Copy, Check, ArrowLeft, Loader2 } from 'lucide-react';
+import { Flame, Snowflake, Swords, Users, Bot, Globe, Copy, Check, ArrowLeft, Loader2, Trophy } from 'lucide-react';
 import { useOnlineGame } from '@/hooks/useOnlineGame';
+import TournamentSetup from '@/components/TournamentSetup';
 
 interface StartScreenProps {
   onStart: (mode: 'pvp' | 'pvai') => void;

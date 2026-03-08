@@ -281,6 +281,44 @@ export function useChessGame() {
     };
   }, [gameMode, onlineConfig, executeMove]);
 
+  // Presence-based opponent disconnect detection
+  useEffect(() => {
+    if (gameMode !== 'online' || !onlineConfig) return;
+
+    const sessionId = localStorage.getItem('chess_session_id') || '';
+    const presenceChannel = supabase.channel(`presence-${onlineConfig.roomId}`, {
+      config: { presence: { key: sessionId } },
+    });
+
+    let opponentSeen = false;
+
+    presenceChannel
+      .on('presence', { event: 'sync' }, () => {
+        const presenceState = presenceChannel.presenceState();
+        const keys = Object.keys(presenceState);
+        const otherPlayers = keys.filter(k => k !== sessionId);
+
+        if (otherPlayers.length > 0) {
+          opponentSeen = true;
+          setOpponentDisconnected(false);
+        } else if (opponentSeen) {
+          setOpponentDisconnected(true);
+        }
+      })
+      .subscribe(async (status) => {
+        if (status === 'SUBSCRIBED') {
+          await presenceChannel.track({
+            color: onlineConfig.playerColor,
+            online_at: new Date().toISOString(),
+          });
+        }
+      });
+
+    return () => {
+      supabase.removeChannel(presenceChannel);
+    };
+  }, [gameMode, onlineConfig]);
+
   // AI move trigger
   useEffect(() => {
     if (gameMode !== 'pvai' || currentTurn !== 'ice' || checkmatedColor || animatingPiece) return;

@@ -42,7 +42,9 @@ function applyMoveResult(
     setSelectedPos: (p: Position | null) => void;
     setValidMoves: (m: Position[]) => void;
     setAnimatingPiece: (a: AnimatingPiece | null) => void;
-  }
+    setMoveHistory: React.Dispatch<React.SetStateAction<MoveRecord[]>>;
+  },
+  movingPieceType: PieceType
 ) {
   const { setBoard, setLastMove, setMoveType, setCapturedPieces, setCurrentTurn, setInCheck, setCheckmatedColor, setKingInCheckPos, setSelectedPos, setValidMoves, setAnimatingPiece } = setters;
   

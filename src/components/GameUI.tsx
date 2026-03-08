@@ -462,8 +462,8 @@ function MobileVolumeControl() {
 
 // ============ GAME OVER OVERLAY WITH VFX ============
 
-function GameOverOverlay({ winner, checkmatedColor, onReset, playerWon, playerLost, gameMode }: {
-  winner: PieceColor; checkmatedColor: PieceColor | null; onReset: () => void; playerWon: boolean; playerLost: boolean; gameMode: GameMode;
+function GameOverOverlay({ winner, checkmatedColor, onReset, playerWon, playerLost, gameMode, onRematch }: {
+  winner: PieceColor; checkmatedColor: PieceColor | null; onReset: () => void; playerWon: boolean; playerLost: boolean; gameMode: GameMode; onRematch?: () => void;
 }) {
   const [particles, setParticles] = useState<Array<{ id: number; x: number; y: number; size: number; delay: number; color: string }>>([]);
 

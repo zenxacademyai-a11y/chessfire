@@ -10,12 +10,13 @@ const Index = () => {
   const {
     board, selectedPos, validMoves, currentTurn, capturedPieces, lastMove, moveType,
     inCheck, checkmatedColor, animatingPiece, kingInCheckPos,
-    gameMode, aiThinking, lastMovedPieceType,
-    handleSquareClick, resetGame, toggleGameMode
+    gameMode, aiThinking, lastMovedPieceType, aiDifficulty,
+    handleSquareClick, resetGame, toggleGameMode, setAiDifficulty
   } = useChessGame();
   const { fireTime, iceTime, timedOutColor, resetClock } = useChessClock(currentTurn, checkmatedColor);
-  const { playMove, playCapture, playSelect, playCheck, playCheckmate, playPieceMove, playPieceCapture } = useSound();
+  const { playMove, playCapture, playSelect, playCheck, playCheckmate, playPieceMove, playPieceCapture, playVictory, playDefeat } = useSound();
   const prevMoveRef = useRef(lastMove);
+  const prevGameOverRef = useRef(false);
 
   const handleReset = useCallback(() => {
     resetGame();
@@ -27,6 +28,7 @@ const Index = () => {
     resetClock();
   }, [toggleGameMode, resetClock]);
 
+  // Move sounds
   useEffect(() => {
     if (lastMove && lastMove !== prevMoveRef.current) {
       if (moveType === 'checkmate') playCheckmate();
@@ -37,6 +39,22 @@ const Index = () => {
     }
     prevMoveRef.current = lastMove;
   }, [lastMove, moveType, lastMovedPieceType]);
+
+  // Win/lose sounds
+  const gameOver = !!checkmatedColor || !!timedOutColor;
+  const winner = checkmatedColor === 'fire' ? 'ice' : checkmatedColor === 'ice' ? 'fire' : timedOutColor === 'fire' ? 'ice' : timedOutColor === 'ice' ? 'fire' : null;
+
+  useEffect(() => {
+    if (gameOver && !prevGameOverRef.current && winner) {
+      if (gameMode === 'pvai') {
+        if (winner === 'fire') playVictory();
+        else playDefeat();
+      } else {
+        playVictory();
+      }
+    }
+    prevGameOverRef.current = gameOver;
+  }, [gameOver, winner, gameMode]);
 
   useEffect(() => {
     if (selectedPos) playSelect();
@@ -56,6 +74,8 @@ const Index = () => {
         gameMode={gameMode}
         aiThinking={aiThinking}
         onModeChange={handleModeChange}
+        aiDifficulty={aiDifficulty}
+        onDifficultyChange={setAiDifficulty}
       />
       <Canvas
         shadows

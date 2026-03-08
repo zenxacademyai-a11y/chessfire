@@ -343,6 +343,7 @@ export default function StartScreen({ onStart, onStartOnline }: StartScreenProps
                 key="online"
                 onBack={() => setShowOnline(false)}
                 onStartOnline={handleStartOnline}
+                autoJoinCode={initialJoinCode}
               />
             )}
           </AnimatePresence>

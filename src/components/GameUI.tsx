@@ -227,6 +227,23 @@ export default function GameUI({
             </div>
           )}
 
+          {/* Hint button */}
+          {!gameOver && (
+            <button
+              onClick={onHint}
+              disabled={hintLoading || aiThinking}
+              className={`glass-panel rounded-xl px-3 py-2 flex items-center gap-1.5 text-sm font-medium transition-all group ${
+                hintLoading
+                  ? 'text-yellow-500 animate-pulse'
+                  : 'text-muted-foreground hover:text-yellow-500 hover:bg-yellow-500/10'
+              }`}
+              style={hintLoading ? { borderColor: 'hsl(45 90% 50% / 0.4)', boxShadow: '0 0 15px hsl(45 90% 50% / 0.2)' } : {}}
+            >
+              <Lightbulb size={14} className={hintLoading ? 'animate-spin' : 'group-hover:scale-110 transition-transform'} />
+              <span className="hidden md:inline">{hintLoading ? 'Analyzing...' : 'Hint'}</span>
+            </button>
+          )}
+
           {/* Reset */}
           <button
             onClick={onReset}

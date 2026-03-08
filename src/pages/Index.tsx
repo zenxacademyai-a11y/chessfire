@@ -6,6 +6,7 @@ import GameUI from '@/components/GameUI';
 import MoveHistoryPanel from '@/components/MoveHistoryPanel';
 import ConfettiExplosion from '@/components/ConfettiExplosion';
 import { useChessGame } from '@/hooks/useChessGame';
+import StartScreen from '@/components/StartScreen';
 import { useChessClock } from '@/hooks/useChessClock';
 import { useSound } from '@/components/SoundManager';
 

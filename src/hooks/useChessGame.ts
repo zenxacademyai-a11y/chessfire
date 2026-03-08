@@ -440,7 +440,7 @@ export function useChessGame() {
     inCheck, checkmatedColor, animatingPiece, kingInCheckPos,
     gameMode, aiThinking, lastMovedPieceType, aiDifficulty,
     hintMove, hintLoading, moveHistory, viewingMoveIndex,
-    onlineConfig,
+    onlineConfig, opponentDisconnected,
     handleSquareClick, resetGame, toggleGameMode, setAiDifficulty, getHint,
     undoMove, viewMove, exitReplay, startOnlineGame,
   };

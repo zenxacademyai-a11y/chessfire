@@ -110,6 +110,63 @@ export function movePiece(board: Board, from: Position, to: Position): { newBoar
   return { newBoard, captured };
 }
 
+// Find the king position for a given color
+function findKing(board: Board, color: PieceColor): Position | null {
+  for (let row = 0; row < 8; row++) {
+    for (let col = 0; col < 8; col++) {
+      const piece = board[row][col];
+      if (piece && piece.type === 'king' && piece.color === color) {
+        return { row, col };
+      }
+    }
+  }
+  return null;
+}
+
+// Check if a color's king is in check
+export function isInCheck(board: Board, color: PieceColor): boolean {
+  const kingPos = findKing(board, color);
+  if (!kingPos) return false;
+  
+  const enemyColor: PieceColor = color === 'fire' ? 'ice' : 'fire';
+  
+  // Check if any enemy piece can attack the king
+  for (let row = 0; row < 8; row++) {
+    for (let col = 0; col < 8; col++) {
+      const piece = board[row][col];
+      if (piece && piece.color === enemyColor) {
+        const moves = getValidMoves(board, { row, col });
+        if (moves.some(m => m.row === kingPos.row && m.col === kingPos.col)) {
+          return true;
+        }
+      }
+    }
+  }
+  return false;
+}
+
+// Check if a color is in checkmate (in check and no legal moves escape it)
+export function isCheckmate(board: Board, color: PieceColor): boolean {
+  if (!isInCheck(board, color)) return false;
+  
+  // Try every possible move for the color
+  for (let row = 0; row < 8; row++) {
+    for (let col = 0; col < 8; col++) {
+      const piece = board[row][col];
+      if (piece && piece.color === color) {
+        const moves = getValidMoves(board, { row, col });
+        for (const move of moves) {
+          const { newBoard } = movePiece(board, { row, col }, move);
+          if (!isInCheck(newBoard, color)) {
+            return false; // Found a legal move that escapes check
+          }
+        }
+      }
+    }
+  }
+  return true; // No legal moves escape check
+}
+
 export const pieceSymbols: Record<PieceType, string> = {
   king: '♚', queen: '♛', rook: '♜', bishop: '♝', knight: '♞', pawn: '♟'
 };

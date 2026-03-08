@@ -1,39 +1,56 @@
 import { useRef, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { OrbitControls, Environment, ContactShadows } from '@react-three/drei';
+import { OrbitControls, ContactShadows } from '@react-three/drei';
 import * as THREE from 'three';
 import ChessPiece3D from './ChessPiece3D';
+import AnimatingPieceComponent from './AnimatingPiece';
 import type { Board, Position } from '@/utils/chessLogic';
+import type { AnimatingPiece } from '@/hooks/useChessGame';
 
 interface ChessBoard3DProps {
   board: Board;
   selectedPos: Position | null;
   validMoves: Position[];
   onSquareClick: (row: number, col: number) => void;
+  animatingPiece: AnimatingPiece | null;
+  kingInCheckPos: Position | null;
 }
 
-function BoardSquare({ row, col, isLight, isSelected, isValidMove, isLastMove, onClick }: {
-  row: number; col: number; isLight: boolean; isSelected: boolean; isValidMove: boolean; isLastMove: boolean; onClick: () => void;
+function BoardSquare({ row, col, isLight, isSelected, isValidMove, isKingInCheck, onClick }: {
+  row: number; col: number; isLight: boolean; isSelected: boolean; isValidMove: boolean; isKingInCheck: boolean; onClick: () => void;
 }) {
   const meshRef = useRef<THREE.Mesh>(null);
   const x = col - 3.5;
   const z = row - 3.5;
 
   const baseColor = isLight ? '#1a1a2e' : '#0f0f1a';
-  const selectedColor = '#ff8c00';
-  const validColor = '#00cc66';
-  const lastMoveColor = '#664400';
 
   let color = baseColor;
-  if (isSelected) color = selectedColor;
-  else if (isValidMove) color = validColor;
-  else if (isLastMove) color = lastMoveColor;
+  let emissive = '#000000';
+  let emissiveIntensity = 0;
+
+  if (isKingInCheck) {
+    color = '#4a0000';
+    emissive = '#ff0000';
+    emissiveIntensity = 0.6;
+  } else if (isSelected) {
+    color = '#ff8c00';
+    emissive = '#ff6600';
+    emissiveIntensity = 0.5;
+  } else if (isValidMove) {
+    color = '#00cc66';
+    emissive = '#00ff88';
+    emissiveIntensity = 0.3;
+  }
 
   useFrame((state) => {
     if (!meshRef.current) return;
+    const mat = meshRef.current.material as THREE.MeshStandardMaterial;
     if (isValidMove) {
-      (meshRef.current.material as THREE.MeshStandardMaterial).emissiveIntensity = 
-        0.3 + Math.sin(state.clock.elapsedTime * 3) * 0.2;
+      mat.emissiveIntensity = 0.3 + Math.sin(state.clock.elapsedTime * 3) * 0.2;
+    }
+    if (isKingInCheck) {
+      mat.emissiveIntensity = 0.4 + Math.sin(state.clock.elapsedTime * 5) * 0.3;
     }
   });
 
@@ -42,8 +59,8 @@ function BoardSquare({ row, col, isLight, isSelected, isValidMove, isLastMove, o
       <boxGeometry args={[1, 0.15, 1]} />
       <meshStandardMaterial
         color={color}
-        emissive={isValidMove ? '#00ff88' : isSelected ? '#ff6600' : '#000000'}
-        emissiveIntensity={isValidMove ? 0.3 : isSelected ? 0.5 : 0}
+        emissive={emissive}
+        emissiveIntensity={emissiveIntensity}
         metalness={0.4}
         roughness={0.6}
       />
@@ -54,7 +71,6 @@ function BoardSquare({ row, col, isLight, isSelected, isValidMove, isLastMove, o
 function BoardFrame() {
   return (
     <group>
-      {/* Frame edges */}
       {[[-4.5, 0, 0, 1, 0.2, 9], [4.5, 0, 0, 1, 0.2, 9],
         [0, 0, -4.5, 9, 0.2, 1], [0, 0, 4.5, 9, 0.2, 1]].map(([x, y, z, w, h, d], i) => (
         <mesh key={i} position={[x, y, z]} receiveShadow>
@@ -67,15 +83,14 @@ function BoardFrame() {
 }
 
 function FireParticles() {
-  const particles = useMemo(() => {
-    return Array.from({ length: 30 }, () => ({
+  const particles = useMemo(() =>
+    Array.from({ length: 30 }, () => ({
       x: (Math.random() - 0.5) * 10,
       z: 4 + Math.random() * 2,
       speed: 0.5 + Math.random() * 1.5,
       offset: Math.random() * Math.PI * 2,
       size: 0.02 + Math.random() * 0.04,
-    }));
-  }, []);
+    })), []);
 
   const meshRef = useRef<THREE.InstancedMesh>(null);
   const dummy = useMemo(() => new THREE.Object3D(), []);
@@ -101,15 +116,14 @@ function FireParticles() {
 }
 
 function IceParticles() {
-  const particles = useMemo(() => {
-    return Array.from({ length: 30 }, () => ({
+  const particles = useMemo(() =>
+    Array.from({ length: 30 }, () => ({
       x: (Math.random() - 0.5) * 10,
       z: -4 - Math.random() * 2,
       speed: 0.3 + Math.random() * 1,
       offset: Math.random() * Math.PI * 2,
       size: 0.02 + Math.random() * 0.03,
-    }));
-  }, []);
+    })), []);
 
   const meshRef = useRef<THREE.InstancedMesh>(null);
   const dummy = useMemo(() => new THREE.Object3D(), []);
@@ -134,7 +148,11 @@ function IceParticles() {
   );
 }
 
-export default function ChessBoard3D({ board, selectedPos, validMoves, onSquareClick }: ChessBoard3DProps) {
+export default function ChessBoard3D({ board, selectedPos, validMoves, onSquareClick, animatingPiece, kingInCheckPos }: ChessBoard3DProps) {
+  // Find source position of animating piece to hide it on the board
+  const animFromRow = animatingPiece ? Math.round(animatingPiece.from[2] + 3.5) : -1;
+  const animFromCol = animatingPiece ? Math.round(animatingPiece.from[0] + 3.5) : -1;
+
   return (
     <>
       <ambientLight intensity={0.3} />
@@ -153,35 +171,37 @@ export default function ChessBoard3D({ board, selectedPos, validMoves, onSquareC
 
       <BoardFrame />
       
-      {/* Board squares */}
       {Array.from({ length: 8 }, (_, row) =>
         Array.from({ length: 8 }, (_, col) => {
           const isLight = (row + col) % 2 === 0;
           const isSelected = selectedPos?.row === row && selectedPos?.col === col;
           const isValidMove = validMoves.some(m => m.row === row && m.col === col);
+          const isKingInCheck = kingInCheckPos?.row === row && kingInCheckPos?.col === col;
           
           return (
             <BoardSquare
               key={`${row}-${col}`}
-              row={row}
-              col={col}
+              row={row} col={col}
               isLight={isLight}
               isSelected={isSelected}
               isValidMove={isValidMove}
-              isLastMove={false}
+              isKingInCheck={isKingInCheck}
               onClick={() => onSquareClick(row, col)}
             />
           );
         })
       )}
 
-      {/* Pieces */}
       {board.map((row, rowIdx) =>
         row.map((piece, colIdx) => {
           if (!piece) return null;
+          // Hide piece at animation source
+          if (rowIdx === animFromRow && colIdx === animFromCol) return null;
+          
           const x = colIdx - 3.5;
           const z = rowIdx - 3.5;
           const isSelected = selectedPos?.row === rowIdx && selectedPos?.col === colIdx;
+          const isInCheck = piece.type === 'king' && kingInCheckPos?.row === rowIdx && kingInCheckPos?.col === colIdx;
           
           return (
             <ChessPiece3D
@@ -190,17 +210,25 @@ export default function ChessBoard3D({ board, selectedPos, validMoves, onSquareC
               color={piece.color}
               position={[x, 0.08, z]}
               isSelected={isSelected}
+              isInCheck={isInCheck}
               onClick={() => onSquareClick(rowIdx, colIdx)}
             />
           );
         })
       )}
 
+      {/* Animating piece */}
+      {animatingPiece && (
+        <AnimatingPieceComponent
+          anim={animatingPiece}
+          duration={animatingPiece.isKnight ? 600 : 400}
+        />
+      )}
+
       <FireParticles />
       <IceParticles />
 
       <ContactShadows position={[0, -0.1, 0]} opacity={0.4} scale={12} blur={2} />
-      
       <fog attach="fog" args={['#0a0a15', 10, 25]} />
     </>
   );

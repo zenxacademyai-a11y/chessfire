@@ -6,13 +6,19 @@ import { useChessGame } from '@/hooks/useChessGame';
 import { useSound } from '@/components/SoundManager';
 
 const Index = () => {
-  const { board, selectedPos, validMoves, currentTurn, capturedPieces, lastMove, moveType, handleSquareClick, resetGame } = useChessGame();
-  const { playMove, playCapture, playSelect } = useSound();
+  const {
+    board, selectedPos, validMoves, currentTurn, capturedPieces, lastMove, moveType,
+    inCheck, checkmatedColor, animatingPiece, kingInCheckPos,
+    handleSquareClick, resetGame
+  } = useChessGame();
+  const { playMove, playCapture, playSelect, playCheck, playCheckmate } = useSound();
   const prevMoveRef = useRef(lastMove);
 
   useEffect(() => {
     if (lastMove && lastMove !== prevMoveRef.current) {
-      if (moveType === 'capture') playCapture();
+      if (moveType === 'checkmate') playCheckmate();
+      else if (moveType === 'check') playCheck();
+      else if (moveType === 'capture') playCapture();
       else playMove();
     }
     prevMoveRef.current = lastMove;
@@ -24,7 +30,13 @@ const Index = () => {
 
   return (
     <div className="relative w-full h-screen bg-background overflow-hidden">
-      <GameUI currentTurn={currentTurn} capturedPieces={capturedPieces} onReset={resetGame} />
+      <GameUI
+        currentTurn={currentTurn}
+        capturedPieces={capturedPieces}
+        onReset={resetGame}
+        inCheck={inCheck}
+        checkmatedColor={checkmatedColor}
+      />
       <Canvas
         shadows
         camera={{ position: [0, 8, 8], fov: 50 }}
@@ -35,6 +47,8 @@ const Index = () => {
           selectedPos={selectedPos}
           validMoves={validMoves}
           onSquareClick={handleSquareClick}
+          animatingPiece={animatingPiece}
+          kingInCheckPos={kingInCheckPos}
         />
       </Canvas>
     </div>

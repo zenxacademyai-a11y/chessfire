@@ -1,8 +1,9 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import { Canvas } from '@react-three/fiber';
 import ChessBoard3D from '@/components/ChessBoard3D';
 import GameUI from '@/components/GameUI';
 import { useChessGame } from '@/hooks/useChessGame';
+import { useChessClock } from '@/hooks/useChessClock';
 import { useSound } from '@/components/SoundManager';
 
 const Index = () => {
@@ -11,8 +12,14 @@ const Index = () => {
     inCheck, checkmatedColor, animatingPiece, kingInCheckPos,
     handleSquareClick, resetGame
   } = useChessGame();
+  const { fireTime, iceTime, timedOutColor, resetClock } = useChessClock(currentTurn, checkmatedColor);
   const { playMove, playCapture, playSelect, playCheck, playCheckmate } = useSound();
   const prevMoveRef = useRef(lastMove);
+
+  const handleReset = useCallback(() => {
+    resetGame();
+    resetClock();
+  }, [resetGame, resetClock]);
 
   useEffect(() => {
     if (lastMove && lastMove !== prevMoveRef.current) {
@@ -33,9 +40,12 @@ const Index = () => {
       <GameUI
         currentTurn={currentTurn}
         capturedPieces={capturedPieces}
-        onReset={resetGame}
+        onReset={handleReset}
         inCheck={inCheck}
         checkmatedColor={checkmatedColor}
+        fireTime={fireTime}
+        iceTime={iceTime}
+        timedOutColor={timedOutColor}
       />
       <Canvas
         shadows

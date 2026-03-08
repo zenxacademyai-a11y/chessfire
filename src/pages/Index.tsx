@@ -35,6 +35,13 @@ const Index = () => {
     resetClock();
   }, [toggleGameMode, resetClock]);
 
+  const handleStart = useCallback((mode: 'pvp' | 'pvai') => {
+    toggleGameMode(mode);
+    resetGame();
+    resetClock();
+    setGameStarted(true);
+  }, [toggleGameMode, resetGame, resetClock]);
+
   // Move sounds
   useEffect(() => {
     if (lastMove && lastMove !== prevMoveRef.current) {

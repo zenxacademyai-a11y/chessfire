@@ -120,6 +120,7 @@ export function useOnlineGame() {
       roomId: room.id,
       playerColor: 'ice',
       error: null,
+      opponentDisconnected: false,
     });
   }, []);
 

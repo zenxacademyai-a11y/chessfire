@@ -91,12 +91,13 @@ interface GameUIProps {
   onlinePlayerColor?: 'fire' | 'ice' | null;
   opponentDisconnected?: boolean;
   onClaimVictory?: () => void;
+  onRematch?: () => void;
 }
 
 export default function GameUI({
   currentTurn, capturedPieces, onReset, inCheck, checkmatedColor,
   fireTime, iceTime, timedOutColor, gameMode, aiThinking, onModeChange,
-  aiDifficulty, onDifficultyChange, onHint, hintLoading, onlinePlayerColor, opponentDisconnected, onClaimVictory
+  aiDifficulty, onDifficultyChange, onHint, hintLoading, onlinePlayerColor, opponentDisconnected, onClaimVictory, onRematch
 }: GameUIProps) {
   const fireCaptured = capturedPieces.filter(p => p.color === 'fire');
   const iceCaptured = capturedPieces.filter(p => p.color === 'ice');

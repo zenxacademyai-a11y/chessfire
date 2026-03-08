@@ -79,11 +79,10 @@ function BoardFrame() {
   );
 }
 
-// Realistic fire — multi-layer flames with embers, sparks, and smoke
+// Lightweight fire effect — reduced particles
 function RealisticFire() {
-  // Main flame particles
   const flames = useMemo(() =>
-    Array.from({ length: 80 }, () => ({
+    Array.from({ length: 25 }, () => ({
       x: (Math.random() - 0.5) * 9,
       z: 3.5 + Math.random() * 3,
       speed: 1.0 + Math.random() * 2.5,
@@ -101,98 +100,21 @@ function RealisticFire() {
       const t = (state.clock.elapsedTime * p.speed + p.offset) % p.life;
       const progress = t / p.life;
       const y = progress * 2.5;
-      const wobble = Math.sin(t * 8 + p.offset) * 0.15 * (1 - progress);
-      dummy.position.set(
-        p.x + wobble,
-        y,
-        p.z + Math.cos(t * 3 + p.offset) * 0.1
-      );
-      const scale = p.size * (1 - progress * 0.7) * (0.5 + Math.sin(t * 12) * 0.3);
-      dummy.scale.setScalar(Math.max(scale, 0.001));
+      dummy.position.set(p.x, y, p.z);
+      dummy.scale.setScalar(Math.max(p.size * (1 - progress * 0.7), 0.001));
       dummy.updateMatrix();
       flameRef.current!.setMatrixAt(i, dummy.matrix);
     });
     flameRef.current.instanceMatrix.needsUpdate = true;
   });
 
-  // Embers — small bright particles rising
-  const embers = useMemo(() =>
-    Array.from({ length: 40 }, () => ({
-      x: (Math.random() - 0.5) * 10,
-      z: 3 + Math.random() * 4,
-      speed: 0.5 + Math.random() * 1.5,
-      offset: Math.random() * Math.PI * 2,
-      size: 0.01 + Math.random() * 0.02,
-    })), []);
-
-  const emberRef = useRef<THREE.InstancedMesh>(null);
-
-  useFrame((state) => {
-    if (!emberRef.current) return;
-    embers.forEach((p, i) => {
-      const t = (state.clock.elapsedTime * p.speed + p.offset) % 4;
-      dummy.position.set(
-        p.x + Math.sin(t * 2 + p.offset) * 0.8,
-        t * 1.2 + Math.sin(t * 5) * 0.3,
-        p.z + Math.cos(t * 1.5) * 0.5
-      );
-      dummy.scale.setScalar(p.size * (1 - t / 4));
-      dummy.updateMatrix();
-      emberRef.current!.setMatrixAt(i, dummy.matrix);
-    });
-    emberRef.current.instanceMatrix.needsUpdate = true;
-  });
-
-  // Smoke — larger, darker, rising slowly
-  const smoke = useMemo(() =>
-    Array.from({ length: 20 }, () => ({
-      x: (Math.random() - 0.5) * 8,
-      z: 4 + Math.random() * 2,
-      speed: 0.2 + Math.random() * 0.5,
-      offset: Math.random() * Math.PI * 2,
-      size: 0.08 + Math.random() * 0.12,
-    })), []);
-
-  const smokeRef = useRef<THREE.InstancedMesh>(null);
-
-  useFrame((state) => {
-    if (!smokeRef.current) return;
-    smoke.forEach((p, i) => {
-      const t = (state.clock.elapsedTime * p.speed + p.offset) % 6;
-      const progress = t / 6;
-      dummy.position.set(
-        p.x + Math.sin(t + p.offset) * 0.5,
-        1.5 + t * 0.8,
-        p.z + Math.cos(t * 0.5) * 0.3
-      );
-      dummy.scale.setScalar(p.size * (0.5 + progress * 1.5));
-      dummy.updateMatrix();
-      smokeRef.current!.setMatrixAt(i, dummy.matrix);
-    });
-    smokeRef.current.instanceMatrix.needsUpdate = true;
-  });
-
   return (
     <group>
-      {/* Main flames — orange/yellow */}
       <instancedMesh ref={flameRef} args={[undefined, undefined, flames.length]}>
-        <sphereGeometry args={[1, 6, 6]} />
+        <sphereGeometry args={[1, 4, 4]} />
         <meshBasicMaterial color="#ff5500" transparent opacity={0.85} />
       </instancedMesh>
-      {/* Hot embers — bright yellow */}
-      <instancedMesh ref={emberRef} args={[undefined, undefined, embers.length]}>
-        <sphereGeometry args={[1, 4, 4]} />
-        <meshBasicMaterial color="#ffcc00" transparent opacity={0.9} />
-      </instancedMesh>
-      {/* Smoke */}
-      <instancedMesh ref={smokeRef} args={[undefined, undefined, smoke.length]}>
-        <sphereGeometry args={[1, 6, 6]} />
-        <meshBasicMaterial color="#333333" transparent opacity={0.12} />
-      </instancedMesh>
-      {/* Fire glow light */}
-      <pointLight position={[0, 1.5, 5]} color="#ff6600" intensity={3} distance={10} />
-      <pointLight position={[-3, 0.5, 4.5]} color="#ff4400" intensity={1.5} distance={6} />
-      <pointLight position={[3, 0.5, 4.5]} color="#ffaa00" intensity={1.5} distance={6} />
+      <pointLight position={[0, 1.5, 5]} color="#ff6600" intensity={2} distance={10} />
     </group>
   );
 }

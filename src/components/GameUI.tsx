@@ -1,5 +1,6 @@
 import type { PieceColor, ChessPiece } from '@/utils/chessLogic';
 import { pieceSymbols } from '@/utils/chessLogic';
+import { formatTime } from '@/hooks/useChessClock';
 
 interface GameUIProps {
   currentTurn: PieceColor;
@@ -7,15 +8,19 @@ interface GameUIProps {
   onReset: () => void;
   inCheck: PieceColor | null;
   checkmatedColor: PieceColor | null;
+  fireTime: number;
+  iceTime: number;
+  timedOutColor: PieceColor | null;
 }
 
-export default function GameUI({ currentTurn, capturedPieces, onReset, inCheck, checkmatedColor }: GameUIProps) {
+export default function GameUI({ currentTurn, capturedPieces, onReset, inCheck, checkmatedColor, fireTime, iceTime, timedOutColor }: GameUIProps) {
   const fireCaptured = capturedPieces.filter(p => p.color === 'fire');
   const iceCaptured = capturedPieces.filter(p => p.color === 'ice');
-  const winner = checkmatedColor === 'fire' ? 'ice' : checkmatedColor === 'ice' ? 'fire' : null;
+  const winner = checkmatedColor === 'fire' ? 'ice' : checkmatedColor === 'ice' ? 'fire' : timedOutColor === 'fire' ? 'ice' : timedOutColor === 'ice' ? 'fire' : null;
+  const gameOver = !!checkmatedColor || !!timedOutColor;
 
   return (
-    <div className="absolute top-0 left-0 right-0 z-10 pointer-events-none">
+    <div className="absolute top-0 left-0 right-0 bottom-0 z-10 pointer-events-none">
       {/* Top bar */}
       <div className="flex items-center justify-between p-4 md:p-6">
         <div className="pointer-events-auto">
@@ -28,14 +33,13 @@ export default function GameUI({ currentTurn, capturedPieces, onReset, inCheck, 
         </div>
 
         <div className="pointer-events-auto flex items-center gap-4">
-          {/* Check/Checkmate alert */}
-          {inCheck && !checkmatedColor && (
+          {inCheck && !gameOver && (
             <div className="px-4 py-2 rounded-lg border border-destructive bg-destructive/20 text-destructive text-sm font-bold tracking-wide animate-pulse">
               ⚠️ {inCheck === 'fire' ? 'Fire' : 'Ice'} King in CHECK!
             </div>
           )}
 
-          {!checkmatedColor && (
+          {!gameOver && (
             <div className={`px-4 py-2 rounded-lg border text-sm font-semibold tracking-wide transition-all duration-300 ${
               currentTurn === 'fire' 
                 ? 'border-primary bg-primary/10 text-primary shadow-[0_0_20px_hsl(15_90%_55%/0.3)]' 
@@ -53,8 +57,39 @@ export default function GameUI({ currentTurn, capturedPieces, onReset, inCheck, 
         </div>
       </div>
 
-      {/* Checkmate overlay */}
-      {checkmatedColor && winner && (
+      {/* Chess Clocks - left side */}
+      <div className="absolute left-4 top-1/2 -translate-y-1/2 flex flex-col gap-4 pointer-events-none">
+        {/* Ice clock */}
+        <div className={`px-4 py-3 rounded-xl border backdrop-blur-sm transition-all duration-300 ${
+          currentTurn === 'ice' && !gameOver
+            ? 'border-secondary bg-secondary/15 shadow-[0_0_25px_hsl(210_80%_55%/0.3)]'
+            : 'border-border/40 bg-card/40'
+        } ${iceTime <= 60 && !gameOver ? 'animate-pulse' : ''}`}>
+          <p className="text-xs text-secondary font-semibold mb-1">❄️ ICE</p>
+          <p className={`text-2xl font-bold tracking-widest font-mono ${
+            iceTime <= 60 ? 'text-destructive' : 'text-secondary'
+          }`}>
+            {formatTime(iceTime)}
+          </p>
+        </div>
+
+        {/* Fire clock */}
+        <div className={`px-4 py-3 rounded-xl border backdrop-blur-sm transition-all duration-300 ${
+          currentTurn === 'fire' && !gameOver
+            ? 'border-primary bg-primary/15 shadow-[0_0_25px_hsl(15_90%_55%/0.3)]'
+            : 'border-border/40 bg-card/40'
+        } ${fireTime <= 60 && !gameOver ? 'animate-pulse' : ''}`}>
+          <p className="text-xs text-primary font-semibold mb-1">🔥 FIRE</p>
+          <p className={`text-2xl font-bold tracking-widest font-mono ${
+            fireTime <= 60 ? 'text-destructive' : 'text-primary'
+          }`}>
+            {formatTime(fireTime)}
+          </p>
+        </div>
+      </div>
+
+      {/* Game over overlay */}
+      {gameOver && winner && (
         <div className="flex justify-center mt-8 pointer-events-auto">
           <div className={`px-8 py-4 rounded-2xl border-2 backdrop-blur-md text-center ${
             winner === 'fire'
@@ -62,7 +97,7 @@ export default function GameUI({ currentTurn, capturedPieces, onReset, inCheck, 
               : 'border-secondary bg-secondary/20 shadow-[0_0_60px_hsl(210_80%_55%/0.4)]'
           }`}>
             <p className="text-3xl md:text-4xl font-bold tracking-wider mb-2">
-              {winner === 'fire' ? '🔥' : '❄️'} CHECKMATE!
+              {winner === 'fire' ? '🔥' : '❄️'} {checkmatedColor ? 'CHECKMATE!' : 'TIME OUT!'}
             </p>
             <p className={`text-lg font-semibold ${winner === 'fire' ? 'text-primary' : 'text-secondary'}`}>
               {winner === 'fire' ? 'Fire' : 'Ice'} Wins!

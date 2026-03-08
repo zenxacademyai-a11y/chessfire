@@ -12,13 +12,14 @@ function OnlinePanel({ onBack, onStartOnline, autoJoinCode }: { onBack: () => vo
   const { status, roomCode, roomId, playerColor, error, createRoom, joinRoom, leaveRoom } = useOnlineGame();
   const [joinCode, setJoinCode] = useState(autoJoinCode || '');
   const [copied, setCopied] = useState(false);
-  const [autoJoined, setAutoJoined] = useState(false);
+  const startedRef = useRef(false);
 
   // Auto-join if code provided via URL
-  if (autoJoinCode && !autoJoined && status === 'idle') {
-    setAutoJoined(true);
-    joinRoom(autoJoinCode);
-  }
+  useEffect(() => {
+    if (autoJoinCode && status === 'idle') {
+      joinRoom(autoJoinCode);
+    }
+  }, [autoJoinCode]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const shareUrl = useMemo(() => {
     if (!roomCode) return '';
@@ -36,11 +37,13 @@ function OnlinePanel({ onBack, onStartOnline, autoJoinCode }: { onBack: () => vo
     onBack();
   };
 
-  // When status becomes 'playing', notify parent
-  if (status === 'playing' && roomId && playerColor) {
-    // Small delay to show transition
-    setTimeout(() => onStartOnline(roomId, playerColor), 500);
-  }
+  // When status becomes 'playing', notify parent (only once)
+  useEffect(() => {
+    if (status === 'playing' && roomId && playerColor && !startedRef.current) {
+      startedRef.current = true;
+      setTimeout(() => onStartOnline(roomId, playerColor), 500);
+    }
+  }, [status, roomId, playerColor, onStartOnline]);
 
   return (
     <motion.div

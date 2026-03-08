@@ -11,6 +11,9 @@ export interface AnimatingPiece {
   color: PieceColor;
   startTime: number;
   isKnight: boolean;
+  isCapture: boolean;
+  capturedType?: ChessPiece['type'];
+  capturedColor?: PieceColor;
 }
 
 function applyMoveResult(

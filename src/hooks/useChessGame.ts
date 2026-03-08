@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { Board, Position, PieceColor, ChessPiece, createInitialBoard, getValidMoves, movePiece, isInCheck, isCheckmate } from '@/utils/chessLogic';
+import { Board, Position, PieceColor, PieceType, ChessPiece, createInitialBoard, getValidMoves, movePiece, isInCheck, isCheckmate } from '@/utils/chessLogic';
 import { getBestMove } from '@/utils/chessAI';
 
 export type GameMode = 'pvp' | 'pvai';
@@ -80,6 +80,7 @@ export function useChessGame() {
   const [capturedPieces, setCapturedPieces] = useState<ChessPiece[]>([]);
   const [lastMove, setLastMove] = useState<{ from: Position; to: Position } | null>(null);
   const [moveType, setMoveType] = useState<'move' | 'capture' | 'check' | 'checkmate' | null>(null);
+  const [lastMovedPieceType, setLastMovedPieceType] = useState<PieceType | null>(null);
   const [inCheck, setInCheck] = useState<PieceColor | null>(null);
   const [checkmatedColor, setCheckmatedColor] = useState<PieceColor | null>(null);
   const [animatingPiece, setAnimatingPiece] = useState<AnimatingPiece | null>(null);
@@ -102,6 +103,7 @@ export function useChessGame() {
     const toPos: [number, number, number] = [to.col - 3.5, 0.08, to.row - 3.5];
     const isCapture = !!targetPiece && targetPiece.color !== movingPiece.color;
 
+    setLastMovedPieceType(movingPiece.type);
     setAnimatingPiece({
       from: fromPos, to: toPos,
       type: movingPiece.type, color: movingPiece.color,
@@ -201,7 +203,7 @@ export function useChessGame() {
   return {
     board, selectedPos, validMoves, currentTurn, capturedPieces, lastMove, moveType,
     inCheck, checkmatedColor, animatingPiece, kingInCheckPos,
-    gameMode, aiThinking,
+    gameMode, aiThinking, lastMovedPieceType,
     handleSquareClick, resetGame, toggleGameMode
   };
 }

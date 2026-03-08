@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useCallback, useState } from 'react';
 import { RotateCcw } from 'lucide-react';
 import { Canvas } from '@react-three/fiber';
 import ChessBoard3D from '@/components/ChessBoard3D';
@@ -6,10 +6,12 @@ import GameUI from '@/components/GameUI';
 import MoveHistoryPanel from '@/components/MoveHistoryPanel';
 import ConfettiExplosion from '@/components/ConfettiExplosion';
 import { useChessGame } from '@/hooks/useChessGame';
+import StartScreen from '@/components/StartScreen';
 import { useChessClock } from '@/hooks/useChessClock';
 import { useSound } from '@/components/SoundManager';
 
 const Index = () => {
+  const [gameStarted, setGameStarted] = useState(false);
   const {
     board, selectedPos, validMoves, currentTurn, capturedPieces, lastMove, moveType,
     inCheck, checkmatedColor, animatingPiece, kingInCheckPos,
@@ -32,6 +34,13 @@ const Index = () => {
     toggleGameMode(mode);
     resetClock();
   }, [toggleGameMode, resetClock]);
+
+  const handleStart = useCallback((mode: 'pvp' | 'pvai') => {
+    toggleGameMode(mode);
+    resetGame();
+    resetClock();
+    setGameStarted(true);
+  }, [toggleGameMode, resetGame, resetClock]);
 
   // Move sounds
   useEffect(() => {
@@ -68,6 +77,9 @@ const Index = () => {
 
   return (
     <div className="relative w-full h-screen bg-background overflow-hidden">
+      {/* Start screen */}
+      {!gameStarted && <StartScreen onStart={handleStart} />}
+
       {/* Confetti on player victory */}
       <ConfettiExplosion active={playerWon} />
 

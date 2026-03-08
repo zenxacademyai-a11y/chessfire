@@ -59,7 +59,7 @@ const Index = () => {
       <Canvas
         shadows
         camera={{ position: [0, 8, 8], fov: 50 }}
-        style={{ background: 'linear-gradient(180deg, #0a0a20 0%, #050510 50%, #0a0515 100%)' }}
+        style={{ background: 'linear-gradient(180deg, #f0f0f5 0%, #e8e8f0 40%, #dde0ea 100%)' }}
       >
         <ChessBoard3D
           board={board}

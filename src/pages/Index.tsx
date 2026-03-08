@@ -10,7 +10,8 @@ const Index = () => {
   const {
     board, selectedPos, validMoves, currentTurn, capturedPieces, lastMove, moveType,
     inCheck, checkmatedColor, animatingPiece, kingInCheckPos,
-    handleSquareClick, resetGame
+    gameMode, aiThinking,
+    handleSquareClick, resetGame, toggleGameMode
   } = useChessGame();
   const { fireTime, iceTime, timedOutColor, resetClock } = useChessClock(currentTurn, checkmatedColor);
   const { playMove, playCapture, playSelect, playCheck, playCheckmate } = useSound();
@@ -20,6 +21,11 @@ const Index = () => {
     resetGame();
     resetClock();
   }, [resetGame, resetClock]);
+
+  const handleModeChange = useCallback((mode: 'pvp' | 'pvai') => {
+    toggleGameMode(mode);
+    resetClock();
+  }, [toggleGameMode, resetClock]);
 
   useEffect(() => {
     if (lastMove && lastMove !== prevMoveRef.current) {
@@ -46,6 +52,9 @@ const Index = () => {
         fireTime={fireTime}
         iceTime={iceTime}
         timedOutColor={timedOutColor}
+        gameMode={gameMode}
+        aiThinking={aiThinking}
+        onModeChange={handleModeChange}
       />
       <Canvas
         shadows

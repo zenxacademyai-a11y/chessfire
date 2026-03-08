@@ -1,6 +1,7 @@
 import type { PieceColor, ChessPiece } from '@/utils/chessLogic';
 import { pieceSymbols } from '@/utils/chessLogic';
 import { formatTime } from '@/hooks/useChessClock';
+import type { GameMode } from '@/hooks/useChessGame';
 
 interface GameUIProps {
   currentTurn: PieceColor;
@@ -11,9 +12,15 @@ interface GameUIProps {
   fireTime: number;
   iceTime: number;
   timedOutColor: PieceColor | null;
+  gameMode: GameMode;
+  aiThinking: boolean;
+  onModeChange: (mode: GameMode) => void;
 }
 
-export default function GameUI({ currentTurn, capturedPieces, onReset, inCheck, checkmatedColor, fireTime, iceTime, timedOutColor }: GameUIProps) {
+export default function GameUI({
+  currentTurn, capturedPieces, onReset, inCheck, checkmatedColor,
+  fireTime, iceTime, timedOutColor, gameMode, aiThinking, onModeChange
+}: GameUIProps) {
   const fireCaptured = capturedPieces.filter(p => p.color === 'fire');
   const iceCaptured = capturedPieces.filter(p => p.color === 'ice');
   const winner = checkmatedColor === 'fire' ? 'ice' : checkmatedColor === 'ice' ? 'fire' : timedOutColor === 'fire' ? 'ice' : timedOutColor === 'ice' ? 'fire' : null;
@@ -32,14 +39,45 @@ export default function GameUI({ currentTurn, capturedPieces, onReset, inCheck, 
           <p className="text-xs text-muted-foreground tracking-widest uppercase mt-1">3D Chess Battle</p>
         </div>
 
-        <div className="pointer-events-auto flex items-center gap-4">
-          {inCheck && !gameOver && (
-            <div className="px-4 py-2 rounded-lg border border-destructive bg-destructive/20 text-destructive text-sm font-bold tracking-wide animate-pulse">
-              ⚠️ {inCheck === 'fire' ? 'Fire' : 'Ice'} King in CHECK!
+        <div className="pointer-events-auto flex items-center gap-3">
+          {/* Mode selector */}
+          <div className="flex rounded-lg border border-border overflow-hidden">
+            <button
+              onClick={() => onModeChange('pvp')}
+              className={`px-3 py-1.5 text-xs font-semibold tracking-wide transition-all ${
+                gameMode === 'pvp'
+                  ? 'bg-muted text-foreground'
+                  : 'bg-card/60 text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              👥 PvP
+            </button>
+            <button
+              onClick={() => onModeChange('pvai')}
+              className={`px-3 py-1.5 text-xs font-semibold tracking-wide transition-all ${
+                gameMode === 'pvai'
+                  ? 'bg-muted text-foreground'
+                  : 'bg-card/60 text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              🤖 vs AI
+            </button>
+          </div>
+
+          {/* AI thinking indicator */}
+          {aiThinking && (
+            <div className="px-3 py-1.5 rounded-lg border border-secondary/50 bg-secondary/10 text-secondary text-xs font-bold tracking-wide animate-pulse">
+              🤖 AI thinking...
             </div>
           )}
 
-          {!gameOver && (
+          {inCheck && !gameOver && (
+            <div className="px-4 py-2 rounded-lg border border-destructive bg-destructive/20 text-destructive text-sm font-bold tracking-wide animate-pulse">
+              ⚠️ {inCheck === 'fire' ? 'Fire' : 'Ice'} CHECK!
+            </div>
+          )}
+
+          {!gameOver && !aiThinking && (
             <div className={`px-4 py-2 rounded-lg border text-sm font-semibold tracking-wide transition-all duration-300 ${
               currentTurn === 'fire' 
                 ? 'border-primary bg-primary/10 text-primary shadow-[0_0_20px_hsl(15_90%_55%/0.3)]' 
@@ -59,13 +97,14 @@ export default function GameUI({ currentTurn, capturedPieces, onReset, inCheck, 
 
       {/* Chess Clocks - left side */}
       <div className="absolute left-4 top-1/2 -translate-y-1/2 flex flex-col gap-4 pointer-events-none">
-        {/* Ice clock */}
         <div className={`px-4 py-3 rounded-xl border backdrop-blur-sm transition-all duration-300 ${
           currentTurn === 'ice' && !gameOver
             ? 'border-secondary bg-secondary/15 shadow-[0_0_25px_hsl(210_80%_55%/0.3)]'
             : 'border-border/40 bg-card/40'
         } ${iceTime <= 60 && !gameOver ? 'animate-pulse' : ''}`}>
-          <p className="text-xs text-secondary font-semibold mb-1">❄️ ICE</p>
+          <p className="text-xs text-secondary font-semibold mb-1">
+            ❄️ ICE {gameMode === 'pvai' ? '(AI)' : ''}
+          </p>
           <p className={`text-2xl font-bold tracking-widest font-mono ${
             iceTime <= 60 ? 'text-destructive' : 'text-secondary'
           }`}>
@@ -73,7 +112,6 @@ export default function GameUI({ currentTurn, capturedPieces, onReset, inCheck, 
           </p>
         </div>
 
-        {/* Fire clock */}
         <div className={`px-4 py-3 rounded-xl border backdrop-blur-sm transition-all duration-300 ${
           currentTurn === 'fire' && !gameOver
             ? 'border-primary bg-primary/15 shadow-[0_0_25px_hsl(15_90%_55%/0.3)]'

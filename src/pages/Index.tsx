@@ -111,6 +111,7 @@ const Index = () => {
         onlinePlayerColor={onlineConfig?.playerColor}
         opponentDisconnected={opponentDisconnected}
         onClaimVictory={claimVictory}
+        onRematch={rematchOnline}
       />
 
       {/* Undo button for PvP */}

@@ -116,12 +116,13 @@ export function useChessGame() {
   const [aiThinking, setAiThinking] = useState(false);
   const [hintMove, setHintMove] = useState<{ from: Position; to: Position } | null>(null);
   const [hintLoading, setHintLoading] = useState(false);
+  const [moveHistory, setMoveHistory] = useState<MoveRecord[]>([]);
   const aiTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const setters = {
     setBoard, setLastMove, setMoveType, setCapturedPieces, setCurrentTurn,
     setInCheck, setCheckmatedColor, setKingInCheckPos, setSelectedPos,
-    setValidMoves, setAnimatingPiece,
+    setValidMoves, setAnimatingPiece, setMoveHistory,
   };
 
   const executeMove = useCallback((from: Position, to: Position, boardState: Board, turn: PieceColor) => {

@@ -10,11 +10,11 @@ const Index = () => {
   const {
     board, selectedPos, validMoves, currentTurn, capturedPieces, lastMove, moveType,
     inCheck, checkmatedColor, animatingPiece, kingInCheckPos,
-    gameMode, aiThinking,
+    gameMode, aiThinking, lastMovedPieceType,
     handleSquareClick, resetGame, toggleGameMode
   } = useChessGame();
   const { fireTime, iceTime, timedOutColor, resetClock } = useChessClock(currentTurn, checkmatedColor);
-  const { playMove, playCapture, playSelect, playCheck, playCheckmate } = useSound();
+  const { playMove, playCapture, playSelect, playCheck, playCheckmate, playPieceMove, playPieceCapture } = useSound();
   const prevMoveRef = useRef(lastMove);
 
   const handleReset = useCallback(() => {

@@ -155,9 +155,10 @@ function OnlinePanel({ onBack, onStartOnline, autoJoinCode }: { onBack: () => vo
   );
 }
 
-export default function StartScreen({ onStart, onStartOnline }: StartScreenProps) {
+export default function StartScreen({ onStart, onStartOnline, onStartTournament }: StartScreenProps) {
   const [exiting, setExiting] = useState(false);
   const [showOnline, setShowOnline] = useState(false);
+  const [showTournament, setShowTournament] = useState(false);
 
   const handleStart = (mode: 'pvp' | 'pvai') => {
     setExiting(true);

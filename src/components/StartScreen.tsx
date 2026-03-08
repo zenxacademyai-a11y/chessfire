@@ -157,11 +157,15 @@ export default function StartScreen({ onStart, onStartOnline }: StartScreenProps
     setTimeout(() => onStartOnline(roomId, playerColor), 800);
   };
 
-  // Check URL for join parameter
-  useState(() => {
+  // Check URL for join parameter on mount
+  const [initialJoinCode] = useState(() => {
     const params = new URLSearchParams(window.location.search);
-    const joinCode = params.get('join');
-    if (joinCode) {
+    return params.get('join') || null;
+  });
+
+  // Show online panel if join code in URL
+  useState(() => {
+    if (initialJoinCode) {
       setShowOnline(true);
     }
   });

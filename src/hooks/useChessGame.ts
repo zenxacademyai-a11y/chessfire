@@ -201,6 +201,8 @@ export function useChessGame() {
     setAnimatingPiece(null);
     setKingInCheckPos(null);
     setAiThinking(false);
+    setHintMove(null);
+    setHintLoading(false);
   }, []);
 
   const toggleGameMode = useCallback((mode: GameMode) => {
@@ -208,10 +210,33 @@ export function useChessGame() {
     resetGame();
   }, [resetGame]);
 
+  // Get hint - run AI for the player's color
+  const getHint = useCallback(() => {
+    if (checkmatedColor || animatingPiece || aiThinking || hintLoading) return;
+    if (gameMode === 'pvai' && currentTurn === 'ice') return; // no hint during AI turn
+    
+    setHintLoading(true);
+    setHintMove(null);
+    
+    setTimeout(() => {
+      const best = getBestMove(board, currentTurn, 3);
+      setHintMove(best);
+      setHintLoading(false);
+      // Auto-clear hint after 5 seconds
+      setTimeout(() => setHintMove(null), 5000);
+    }, 100);
+  }, [board, currentTurn, checkmatedColor, animatingPiece, aiThinking, hintLoading, gameMode]);
+
+  // Clear hint when a move is made
+  useEffect(() => {
+    if (lastMove) setHintMove(null);
+  }, [lastMove]);
+
   return {
     board, selectedPos, validMoves, currentTurn, capturedPieces, lastMove, moveType,
     inCheck, checkmatedColor, animatingPiece, kingInCheckPos,
     gameMode, aiThinking, lastMovedPieceType, aiDifficulty,
-    handleSquareClick, resetGame, toggleGameMode, setAiDifficulty
+    hintMove, hintLoading,
+    handleSquareClick, resetGame, toggleGameMode, setAiDifficulty, getHint
   };
 }

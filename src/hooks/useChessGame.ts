@@ -98,6 +98,16 @@ function applyMoveResult(
   setValidMoves([]);
 }
 
+export interface BoardSnapshot {
+  board: Board;
+  currentTurn: PieceColor;
+  capturedPieces: ChessPiece[];
+  lastMove: { from: Position; to: Position } | null;
+  inCheck: PieceColor | null;
+  checkmatedColor: PieceColor | null;
+  kingInCheckPos: Position | null;
+}
+
 export function useChessGame() {
   const [board, setBoard] = useState<Board>(createInitialBoard);
   const [selectedPos, setSelectedPos] = useState<Position | null>(null);
@@ -117,6 +127,8 @@ export function useChessGame() {
   const [hintMove, setHintMove] = useState<{ from: Position; to: Position } | null>(null);
   const [hintLoading, setHintLoading] = useState(false);
   const [moveHistory, setMoveHistory] = useState<MoveRecord[]>([]);
+  const [boardHistory, setBoardHistory] = useState<BoardSnapshot[]>([]);
+  const [viewingMoveIndex, setViewingMoveIndex] = useState<number | null>(null);
   const aiTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const setters = {

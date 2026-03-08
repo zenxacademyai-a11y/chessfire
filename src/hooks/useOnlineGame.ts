@@ -91,9 +91,11 @@ export function useOnlineGame() {
       .single();
 
     if (fetchError || !room) {
+      console.error('[Online] Join room error:', fetchError, 'room:', room);
       setState(s => ({ ...s, status: 'idle', error: 'Room not found or already full.' }));
       return;
     }
+    console.log('[Online] Found room:', room.id, 'status:', room.status);
 
     // Don't join your own room
     if (room.player_fire === sessionId.current) {

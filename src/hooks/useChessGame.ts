@@ -149,7 +149,7 @@ export function useChessGame() {
       : (durations[movingPiece.type] || 500);
 
     setTimeout(() => {
-      applyMoveResult(newBoard, captured, from, to, turn, setters);
+      applyMoveResult(newBoard, captured, from, to, turn, setters, movingPiece.type);
     }, animDuration);
   }, []);
 

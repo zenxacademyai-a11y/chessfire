@@ -2,6 +2,8 @@ import { useEffect, useRef, useCallback } from 'react';
 import { Canvas } from '@react-three/fiber';
 import ChessBoard3D from '@/components/ChessBoard3D';
 import GameUI from '@/components/GameUI';
+import MoveHistoryPanel from '@/components/MoveHistoryPanel';
+import ConfettiExplosion from '@/components/ConfettiExplosion';
 import { useChessGame } from '@/hooks/useChessGame';
 import { useChessClock } from '@/hooks/useChessClock';
 import { useSound } from '@/components/SoundManager';
@@ -11,7 +13,7 @@ const Index = () => {
     board, selectedPos, validMoves, currentTurn, capturedPieces, lastMove, moveType,
     inCheck, checkmatedColor, animatingPiece, kingInCheckPos,
     gameMode, aiThinking, lastMovedPieceType, aiDifficulty,
-    hintMove, hintLoading,
+    hintMove, hintLoading, moveHistory,
     handleSquareClick, resetGame, toggleGameMode, setAiDifficulty, getHint
   } = useChessGame();
   const { fireTime, iceTime, timedOutColor, resetClock } = useChessClock(currentTurn, checkmatedColor);
@@ -44,6 +46,7 @@ const Index = () => {
   // Win/lose sounds
   const gameOver = !!checkmatedColor || !!timedOutColor;
   const winner = checkmatedColor === 'fire' ? 'ice' : checkmatedColor === 'ice' ? 'fire' : timedOutColor === 'fire' ? 'ice' : timedOutColor === 'ice' ? 'fire' : null;
+  const playerWon = gameOver && winner === 'fire' && gameMode === 'pvai';
 
   useEffect(() => {
     if (gameOver && !prevGameOverRef.current && winner) {
@@ -63,6 +66,9 @@ const Index = () => {
 
   return (
     <div className="relative w-full h-screen bg-background overflow-hidden">
+      {/* Confetti on player victory */}
+      <ConfettiExplosion active={playerWon} />
+
       <GameUI
         currentTurn={currentTurn}
         capturedPieces={capturedPieces}
@@ -80,6 +86,10 @@ const Index = () => {
         onHint={getHint}
         hintLoading={hintLoading}
       />
+
+      {/* Move history panel */}
+      <MoveHistoryPanel moves={moveHistory} />
+
       <Canvas
         shadows
         camera={{ position: [0, 8, 8], fov: 50 }}

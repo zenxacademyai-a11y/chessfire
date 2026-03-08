@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { Board, Position, PieceColor, PieceType, ChessPiece, createInitialBoard, getValidMoves, movePiece, isInCheck, isCheckmate } from '@/utils/chessLogic';
 import { getBestMove } from '@/utils/chessAI';
+import { buildMoveNotation, type MoveRecord } from '@/components/MoveHistoryPanel';
 
 export type GameMode = 'pvp' | 'pvai';
 export type AIDifficulty = 'easy' | 'medium' | 'hard';
@@ -41,9 +42,11 @@ function applyMoveResult(
     setSelectedPos: (p: Position | null) => void;
     setValidMoves: (m: Position[]) => void;
     setAnimatingPiece: (a: AnimatingPiece | null) => void;
-  }
+    setMoveHistory: React.Dispatch<React.SetStateAction<MoveRecord[]>>;
+  },
+  movingPieceType: PieceType
 ) {
-  const { setBoard, setLastMove, setMoveType, setCapturedPieces, setCurrentTurn, setInCheck, setCheckmatedColor, setKingInCheckPos, setSelectedPos, setValidMoves, setAnimatingPiece } = setters;
+  const { setBoard, setLastMove, setMoveType, setCapturedPieces, setCurrentTurn, setInCheck, setCheckmatedColor, setKingInCheckPos, setSelectedPos, setValidMoves, setAnimatingPiece, setMoveHistory } = setters;
   
   setBoard(newBoard);
   setAnimatingPiece(null);
@@ -53,7 +56,23 @@ function applyMoveResult(
 
   if (captured) setCapturedPieces(prev => [...prev, captured]);
 
-  if (isCheckmate(newBoard, nextTurn)) {
+  const isCm = isCheckmate(newBoard, nextTurn);
+  const isCk = !isCm && isInCheck(newBoard, nextTurn);
+
+  // Build move record
+  const notation = buildMoveNotation(movingPieceType, from, to, !!captured, isCk, isCm);
+  setMoveHistory(prev => [...prev, {
+    moveNumber: Math.floor(prev.length / 2) + 1,
+    color: currentTurn,
+    pieceType: movingPieceType,
+    from, to,
+    isCapture: !!captured,
+    isCheck: isCk,
+    isCheckmate: isCm,
+    notation,
+  }]);
+
+  if (isCm) {
     setMoveType('checkmate');
     setCheckmatedColor(nextTurn);
     setInCheck(nextTurn);
@@ -61,7 +80,7 @@ function applyMoveResult(
       for (let c = 0; c < 8; c++)
         if (newBoard[r][c]?.type === 'king' && newBoard[r][c]?.color === nextTurn)
           setKingInCheckPos({ row: r, col: c });
-  } else if (isInCheck(newBoard, nextTurn)) {
+  } else if (isCk) {
     setMoveType('check');
     setInCheck(nextTurn);
     for (let r = 0; r < 8; r++)
@@ -97,12 +116,13 @@ export function useChessGame() {
   const [aiThinking, setAiThinking] = useState(false);
   const [hintMove, setHintMove] = useState<{ from: Position; to: Position } | null>(null);
   const [hintLoading, setHintLoading] = useState(false);
+  const [moveHistory, setMoveHistory] = useState<MoveRecord[]>([]);
   const aiTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const setters = {
     setBoard, setLastMove, setMoveType, setCapturedPieces, setCurrentTurn,
     setInCheck, setCheckmatedColor, setKingInCheckPos, setSelectedPos,
-    setValidMoves, setAnimatingPiece,
+    setValidMoves, setAnimatingPiece, setMoveHistory,
   };
 
   const executeMove = useCallback((from: Position, to: Position, boardState: Board, turn: PieceColor) => {
@@ -129,7 +149,7 @@ export function useChessGame() {
       : (durations[movingPiece.type] || 500);
 
     setTimeout(() => {
-      applyMoveResult(newBoard, captured, from, to, turn, setters);
+      applyMoveResult(newBoard, captured, from, to, turn, setters, movingPiece.type);
     }, animDuration);
   }, []);
 
@@ -203,6 +223,7 @@ export function useChessGame() {
     setAiThinking(false);
     setHintMove(null);
     setHintLoading(false);
+    setMoveHistory([]);
   }, []);
 
   const toggleGameMode = useCallback((mode: GameMode) => {
@@ -236,7 +257,7 @@ export function useChessGame() {
     board, selectedPos, validMoves, currentTurn, capturedPieces, lastMove, moveType,
     inCheck, checkmatedColor, animatingPiece, kingInCheckPos,
     gameMode, aiThinking, lastMovedPieceType, aiDifficulty,
-    hintMove, hintLoading,
+    hintMove, hintLoading, moveHistory,
     handleSquareClick, resetGame, toggleGameMode, setAiDifficulty, getHint
   };
 }

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useCallback } from 'react';
+import { RotateCcw } from 'lucide-react';
 import { Canvas } from '@react-three/fiber';
 import ChessBoard3D from '@/components/ChessBoard3D';
 import GameUI from '@/components/GameUI';
@@ -13,8 +14,9 @@ const Index = () => {
     board, selectedPos, validMoves, currentTurn, capturedPieces, lastMove, moveType,
     inCheck, checkmatedColor, animatingPiece, kingInCheckPos,
     gameMode, aiThinking, lastMovedPieceType, aiDifficulty,
-    hintMove, hintLoading, moveHistory,
-    handleSquareClick, resetGame, toggleGameMode, setAiDifficulty, getHint
+    hintMove, hintLoading, moveHistory, viewingMoveIndex,
+    handleSquareClick, resetGame, toggleGameMode, setAiDifficulty, getHint,
+    undoMove, viewMove, exitReplay
   } = useChessGame();
   const { fireTime, iceTime, timedOutColor, resetClock } = useChessClock(currentTurn, checkmatedColor);
   const { playMove, playCapture, playSelect, playCheck, playCheckmate, playPieceMove, playPieceCapture, playVictory, playDefeat } = useSound();
@@ -87,8 +89,41 @@ const Index = () => {
         hintLoading={hintLoading}
       />
 
+      {/* Undo button for PvP */}
+      {gameMode === 'pvp' && !checkmatedColor && !timedOutColor && moveHistory.length > 0 && (
+        <div className="absolute left-3 bottom-24 pointer-events-auto z-20">
+          <button
+            onClick={undoMove}
+            className="glass-panel rounded-xl px-3 py-2 flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all group"
+            title="Undo last move"
+          >
+            <RotateCcw size={14} className="group-hover:rotate-[-180deg] transition-transform duration-500" />
+            <span className="hidden md:inline">Undo</span>
+          </button>
+        </div>
+      )}
+
+      {/* Replay mode indicator */}
+      {viewingMoveIndex !== null && (
+        <div className="absolute top-20 left-1/2 -translate-x-1/2 pointer-events-auto z-20">
+          <div className="glass-panel rounded-xl px-4 py-2 flex items-center gap-2 bg-primary/5 border-primary/20">
+            <span className="text-xs font-bold text-primary tracking-wide">📋 Viewing Move {viewingMoveIndex + 1}</span>
+            <button onClick={exitReplay} className="text-xs font-bold text-primary hover:text-primary/80 underline ml-2">
+              Return to game
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Move history panel */}
-      <MoveHistoryPanel moves={moveHistory} />
+      <MoveHistoryPanel
+        moves={moveHistory}
+        viewingMoveIndex={viewingMoveIndex}
+        onMoveClick={viewMove}
+        onExitReplay={exitReplay}
+        canUndo={gameMode === 'pvp' && !checkmatedColor && !timedOutColor && moveHistory.length > 0}
+        onUndo={undoMove}
+      />
 
       <Canvas
         shadows

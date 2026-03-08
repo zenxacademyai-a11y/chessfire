@@ -18,84 +18,24 @@ export interface AnimatingPiece {
   capturedColor?: PieceColor;
 }
 
+export interface BoardSnapshot {
+  board: Board;
+  currentTurn: PieceColor;
+  capturedPieces: ChessPiece[];
+  lastMove: { from: Position; to: Position } | null;
+  inCheck: PieceColor | null;
+  checkmatedColor: PieceColor | null;
+  kingInCheckPos: Position | null;
+}
+
 const AI_DEPTH: Record<AIDifficulty, number> = {
   easy: 1,
   medium: 3,
   hard: 4,
 };
 
-function applyMoveResult(
-  newBoard: Board,
-  captured: ChessPiece | null,
-  from: Position,
-  to: Position,
-  currentTurn: PieceColor,
-  setters: {
-    setBoard: (b: Board) => void;
-    setLastMove: (m: { from: Position; to: Position }) => void;
-    setMoveType: (t: 'move' | 'capture' | 'check' | 'checkmate') => void;
-    setCapturedPieces: React.Dispatch<React.SetStateAction<ChessPiece[]>>;
-    setCurrentTurn: (c: PieceColor) => void;
-    setInCheck: (c: PieceColor | null) => void;
-    setCheckmatedColor: (c: PieceColor | null) => void;
-    setKingInCheckPos: (p: Position | null) => void;
-    setSelectedPos: (p: Position | null) => void;
-    setValidMoves: (m: Position[]) => void;
-    setAnimatingPiece: (a: AnimatingPiece | null) => void;
-    setMoveHistory: React.Dispatch<React.SetStateAction<MoveRecord[]>>;
-  },
-  movingPieceType: PieceType
-) {
-  const { setBoard, setLastMove, setMoveType, setCapturedPieces, setCurrentTurn, setInCheck, setCheckmatedColor, setKingInCheckPos, setSelectedPos, setValidMoves, setAnimatingPiece, setMoveHistory } = setters;
-  
-  setBoard(newBoard);
-  setAnimatingPiece(null);
-  setLastMove({ from, to });
-
-  const nextTurn: PieceColor = currentTurn === 'fire' ? 'ice' : 'fire';
-
-  if (captured) setCapturedPieces(prev => [...prev, captured]);
-
-  const isCm = isCheckmate(newBoard, nextTurn);
-  const isCk = !isCm && isInCheck(newBoard, nextTurn);
-
-  // Build move record
-  const notation = buildMoveNotation(movingPieceType, from, to, !!captured, isCk, isCm);
-  setMoveHistory(prev => [...prev, {
-    moveNumber: Math.floor(prev.length / 2) + 1,
-    color: currentTurn,
-    pieceType: movingPieceType,
-    from, to,
-    isCapture: !!captured,
-    isCheck: isCk,
-    isCheckmate: isCm,
-    notation,
-  }]);
-
-  if (isCm) {
-    setMoveType('checkmate');
-    setCheckmatedColor(nextTurn);
-    setInCheck(nextTurn);
-    for (let r = 0; r < 8; r++)
-      for (let c = 0; c < 8; c++)
-        if (newBoard[r][c]?.type === 'king' && newBoard[r][c]?.color === nextTurn)
-          setKingInCheckPos({ row: r, col: c });
-  } else if (isCk) {
-    setMoveType('check');
-    setInCheck(nextTurn);
-    for (let r = 0; r < 8; r++)
-      for (let c = 0; c < 8; c++)
-        if (newBoard[r][c]?.type === 'king' && newBoard[r][c]?.color === nextTurn)
-          setKingInCheckPos({ row: r, col: c });
-  } else {
-    setMoveType(captured ? 'capture' : 'move');
-    setInCheck(null);
-    setKingInCheckPos(null);
-  }
-
-  setCurrentTurn(nextTurn);
-  setSelectedPos(null);
-  setValidMoves([]);
+function deepCopyBoard(board: Board): Board {
+  return board.map(row => row.map(cell => cell ? { ...cell } : null));
 }
 
 export function useChessGame() {
@@ -117,13 +57,94 @@ export function useChessGame() {
   const [hintMove, setHintMove] = useState<{ from: Position; to: Position } | null>(null);
   const [hintLoading, setHintLoading] = useState(false);
   const [moveHistory, setMoveHistory] = useState<MoveRecord[]>([]);
+  const [boardHistory, setBoardHistory] = useState<BoardSnapshot[]>([]);
+  const [viewingMoveIndex, setViewingMoveIndex] = useState<number | null>(null);
   const aiTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const setters = {
-    setBoard, setLastMove, setMoveType, setCapturedPieces, setCurrentTurn,
-    setInCheck, setCheckmatedColor, setKingInCheckPos, setSelectedPos,
-    setValidMoves, setAnimatingPiece, setMoveHistory,
-  };
+  // Refs for snapshot capture (to avoid stale closures)
+  const boardRef = useRef(board);
+  const capturedRef = useRef(capturedPieces);
+  const lastMoveRef = useRef(lastMove);
+  const inCheckRef = useRef(inCheck);
+  const checkmatedRef = useRef(checkmatedColor);
+  const kingCheckRef = useRef(kingInCheckPos);
+  const currentTurnRef = useRef(currentTurn);
+
+  useEffect(() => { boardRef.current = board; }, [board]);
+  useEffect(() => { capturedRef.current = capturedPieces; }, [capturedPieces]);
+  useEffect(() => { lastMoveRef.current = lastMove; }, [lastMove]);
+  useEffect(() => { inCheckRef.current = inCheck; }, [inCheck]);
+  useEffect(() => { checkmatedRef.current = checkmatedColor; }, [checkmatedColor]);
+  useEffect(() => { kingCheckRef.current = kingInCheckPos; }, [kingInCheckPos]);
+  useEffect(() => { currentTurnRef.current = currentTurn; }, [currentTurn]);
+
+  const applyMoveResult = useCallback((
+    newBoard: Board,
+    captured: ChessPiece | null,
+    from: Position,
+    to: Position,
+    turn: PieceColor,
+    movingPieceType: PieceType
+  ) => {
+    // Save snapshot before applying
+    setBoardHistory(prev => [...prev, {
+      board: deepCopyBoard(boardRef.current),
+      currentTurn: currentTurnRef.current,
+      capturedPieces: [...capturedRef.current],
+      lastMove: lastMoveRef.current,
+      inCheck: inCheckRef.current,
+      checkmatedColor: checkmatedRef.current,
+      kingInCheckPos: kingCheckRef.current,
+    }]);
+    setViewingMoveIndex(null);
+
+    setBoard(newBoard);
+    setAnimatingPiece(null);
+    setLastMove({ from, to });
+
+    const nextTurn: PieceColor = turn === 'fire' ? 'ice' : 'fire';
+    if (captured) setCapturedPieces(prev => [...prev, captured]);
+
+    const isCm = isCheckmate(newBoard, nextTurn);
+    const isCk = !isCm && isInCheck(newBoard, nextTurn);
+
+    const notation = buildMoveNotation(movingPieceType, from, to, !!captured, isCk, isCm);
+    setMoveHistory(prev => [...prev, {
+      moveNumber: Math.floor(prev.length / 2) + 1,
+      color: turn,
+      pieceType: movingPieceType,
+      from, to,
+      isCapture: !!captured,
+      isCheck: isCk,
+      isCheckmate: isCm,
+      notation,
+    }]);
+
+    if (isCm) {
+      setMoveType('checkmate');
+      setCheckmatedColor(nextTurn);
+      setInCheck(nextTurn);
+      for (let r = 0; r < 8; r++)
+        for (let c = 0; c < 8; c++)
+          if (newBoard[r][c]?.type === 'king' && newBoard[r][c]?.color === nextTurn)
+            setKingInCheckPos({ row: r, col: c });
+    } else if (isCk) {
+      setMoveType('check');
+      setInCheck(nextTurn);
+      for (let r = 0; r < 8; r++)
+        for (let c = 0; c < 8; c++)
+          if (newBoard[r][c]?.type === 'king' && newBoard[r][c]?.color === nextTurn)
+            setKingInCheckPos({ row: r, col: c });
+    } else {
+      setMoveType(captured ? 'capture' : 'move');
+      setInCheck(null);
+      setKingInCheckPos(null);
+    }
+
+    setCurrentTurn(nextTurn);
+    setSelectedPos(null);
+    setValidMoves([]);
+  }, []);
 
   const executeMove = useCallback((from: Position, to: Position, boardState: Board, turn: PieceColor) => {
     const movingPiece = boardState[from.row][from.col]!;
@@ -149,13 +170,14 @@ export function useChessGame() {
       : (durations[movingPiece.type] || 500);
 
     setTimeout(() => {
-      applyMoveResult(newBoard, captured, from, to, turn, setters, movingPiece.type);
+      applyMoveResult(newBoard, captured, from, to, turn, movingPiece.type);
     }, animDuration);
-  }, []);
+  }, [applyMoveResult]);
 
   const handleSquareClick = useCallback((row: number, col: number) => {
     if (animatingPiece || checkmatedColor || aiThinking) return;
     if (gameMode === 'pvai' && currentTurn === 'ice') return;
+    if (viewingMoveIndex !== null) return; // Can't move while viewing history
     
     const piece = board[row][col];
 
@@ -184,7 +206,7 @@ export function useChessGame() {
       setSelectedPos({ row, col });
       setValidMoves(getValidMoves(board, { row, col }));
     }
-  }, [board, selectedPos, validMoves, currentTurn, animatingPiece, checkmatedColor, gameMode, aiThinking, executeMove]);
+  }, [board, selectedPos, validMoves, currentTurn, animatingPiece, checkmatedColor, gameMode, aiThinking, executeMove, viewingMoveIndex]);
 
   // AI move trigger
   useEffect(() => {
@@ -224,6 +246,8 @@ export function useChessGame() {
     setHintMove(null);
     setHintLoading(false);
     setMoveHistory([]);
+    setBoardHistory([]);
+    setViewingMoveIndex(null);
   }, []);
 
   const toggleGameMode = useCallback((mode: GameMode) => {
@@ -231,10 +255,62 @@ export function useChessGame() {
     resetGame();
   }, [resetGame]);
 
-  // Get hint - run AI for the player's color
+  // Undo last move (PvP only)
+  const undoMove = useCallback(() => {
+    if (gameMode !== 'pvp' || animatingPiece || boardHistory.length === 0) return;
+
+    const lastSnapshot = boardHistory[boardHistory.length - 1];
+    setBoard(lastSnapshot.board);
+    setCurrentTurn(lastSnapshot.currentTurn);
+    setCapturedPieces(lastSnapshot.capturedPieces);
+    setLastMove(lastSnapshot.lastMove);
+    setInCheck(lastSnapshot.inCheck);
+    setCheckmatedColor(lastSnapshot.checkmatedColor);
+    setKingInCheckPos(lastSnapshot.kingInCheckPos);
+    setSelectedPos(null);
+    setValidMoves([]);
+    setMoveType(null);
+    setAnimatingPiece(null);
+    setHintMove(null);
+    setViewingMoveIndex(null);
+    setBoardHistory(prev => prev.slice(0, -1));
+    setMoveHistory(prev => prev.slice(0, -1));
+  }, [gameMode, animatingPiece, boardHistory]);
+
+  // View a specific move in history (click-to-replay)
+  const viewMove = useCallback((moveIndex: number) => {
+    if (animatingPiece) return;
+    
+    // moveIndex is 0-based into moveHistory
+    // boardHistory[i] = snapshot BEFORE move i was made
+    // So after move i, the state is: apply move i to boardHistory[i]
+    // But we stored the board state AFTER the move in the next snapshot's "before" state
+    // Actually: boardHistory[i] = state before move[i], so state after move[i] = boardHistory[i+1] or current state
+    
+    if (moveIndex === moveHistory.length - 1) {
+      // Viewing the latest move = back to live
+      setViewingMoveIndex(null);
+      return;
+    }
+    
+    if (moveIndex >= 0 && moveIndex < moveHistory.length - 1) {
+      setViewingMoveIndex(moveIndex);
+    }
+  }, [animatingPiece, moveHistory.length]);
+
+  const exitReplay = useCallback(() => {
+    setViewingMoveIndex(null);
+  }, []);
+
+  // Get the board to display (either live or historical)
+  const displayBoard = viewingMoveIndex !== null && viewingMoveIndex < boardHistory.length - 1
+    ? boardHistory[viewingMoveIndex + 1].board
+    : board;
+
+  // Get hint
   const getHint = useCallback(() => {
     if (checkmatedColor || animatingPiece || aiThinking || hintLoading) return;
-    if (gameMode === 'pvai' && currentTurn === 'ice') return; // no hint during AI turn
+    if (gameMode === 'pvai' && currentTurn === 'ice') return;
     
     setHintLoading(true);
     setHintMove(null);
@@ -243,7 +319,6 @@ export function useChessGame() {
       const best = getBestMove(board, currentTurn, 3);
       setHintMove(best);
       setHintLoading(false);
-      // Auto-clear hint after 5 seconds
       setTimeout(() => setHintMove(null), 5000);
     }, 100);
   }, [board, currentTurn, checkmatedColor, animatingPiece, aiThinking, hintLoading, gameMode]);
@@ -254,10 +329,11 @@ export function useChessGame() {
   }, [lastMove]);
 
   return {
-    board, selectedPos, validMoves, currentTurn, capturedPieces, lastMove, moveType,
+    board: displayBoard, selectedPos, validMoves, currentTurn, capturedPieces, lastMove, moveType,
     inCheck, checkmatedColor, animatingPiece, kingInCheckPos,
     gameMode, aiThinking, lastMovedPieceType, aiDifficulty,
-    hintMove, hintLoading, moveHistory,
-    handleSquareClick, resetGame, toggleGameMode, setAiDifficulty, getHint
+    hintMove, hintLoading, moveHistory, viewingMoveIndex,
+    handleSquareClick, resetGame, toggleGameMode, setAiDifficulty, getHint,
+    undoMove, viewMove, exitReplay,
   };
 }

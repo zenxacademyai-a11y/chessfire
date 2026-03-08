@@ -46,7 +46,7 @@ function applyMoveResult(
   },
   movingPieceType: PieceType
 ) {
-  const { setBoard, setLastMove, setMoveType, setCapturedPieces, setCurrentTurn, setInCheck, setCheckmatedColor, setKingInCheckPos, setSelectedPos, setValidMoves, setAnimatingPiece } = setters;
+  const { setBoard, setLastMove, setMoveType, setCapturedPieces, setCurrentTurn, setInCheck, setCheckmatedColor, setKingInCheckPos, setSelectedPos, setValidMoves, setAnimatingPiece, setMoveHistory } = setters;
   
   setBoard(newBoard);
   setAnimatingPiece(null);

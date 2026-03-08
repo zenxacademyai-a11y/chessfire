@@ -1,5 +1,5 @@
 import { useMemo, useState, useEffect } from 'react';
-import { Crown, Swords, Shield, RotateCcw, Users, Bot, Brain, Clock, Flame, Snowflake, Trophy, AlertTriangle, Volume2, VolumeX, Zap, Target, Skull } from 'lucide-react';
+import { Crown, Swords, Shield, RotateCcw, Users, Bot, Brain, Clock, Flame, Snowflake, Trophy, AlertTriangle, Volume2, VolumeX, Zap, Target, Skull, Lightbulb } from 'lucide-react';
 import type { PieceColor, PieceType, ChessPiece } from '@/utils/chessLogic';
 import { formatTime } from '@/hooks/useChessClock';
 import type { GameMode, AIDifficulty } from '@/hooks/useChessGame';

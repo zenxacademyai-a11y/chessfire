@@ -332,7 +332,7 @@ function RealisticIceSnow() {
   );
 }
 
-export default function ChessBoard3D({ board, selectedPos, validMoves, onSquareClick, animatingPiece, kingInCheckPos }: ChessBoard3DProps) {
+export default function ChessBoard3D({ board, selectedPos, validMoves, onSquareClick, animatingPiece, kingInCheckPos, hintMove }: ChessBoard3DProps) {
   const animFromRow = animatingPiece ? Math.round(animatingPiece.from[2] + 3.5) : -1;
   const animFromCol = animatingPiece ? Math.round(animatingPiece.from[0] + 3.5) : -1;
 
@@ -359,6 +359,8 @@ export default function ChessBoard3D({ board, selectedPos, validMoves, onSquareC
           const isSelected = selectedPos?.row === row && selectedPos?.col === col;
           const isValidMove = validMoves.some(m => m.row === row && m.col === col);
           const isKingInCheck = kingInCheckPos?.row === row && kingInCheckPos?.col === col;
+          const isHintFrom = hintMove?.from.row === row && hintMove?.from.col === col;
+          const isHintTo = hintMove?.to.row === row && hintMove?.to.col === col;
           
           return (
             <BoardSquare
@@ -368,6 +370,8 @@ export default function ChessBoard3D({ board, selectedPos, validMoves, onSquareC
               isSelected={isSelected}
               isValidMove={isValidMove}
               isKingInCheck={isKingInCheck}
+              isHintFrom={isHintFrom}
+              isHintTo={isHintTo}
               onClick={() => onSquareClick(row, col)}
             />
           );

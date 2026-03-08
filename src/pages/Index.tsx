@@ -77,6 +77,8 @@ const Index = () => {
         onModeChange={handleModeChange}
         aiDifficulty={aiDifficulty}
         onDifficultyChange={setAiDifficulty}
+        onHint={getHint}
+        hintLoading={hintLoading}
       />
       <Canvas
         shadows
@@ -90,6 +92,7 @@ const Index = () => {
           onSquareClick={handleSquareClick}
           animatingPiece={animatingPiece}
           kingInCheckPos={kingInCheckPos}
+          hintMove={hintMove}
         />
       </Canvas>
     </div>

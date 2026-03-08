@@ -88,15 +88,41 @@ const Index = () => {
         hintLoading={hintLoading}
       />
 
-      {/* Move history panel */}
-      <MoveHistoryPanel moves={moveHistory} />
+      {/* Undo button for PvP */}
+      {gameMode === 'pvp' && !checkmatedColor && !timedOutColor && moveHistory.length > 0 && (
+        <div className="absolute left-3 bottom-24 pointer-events-auto z-20">
+          <button
+            onClick={undoMove}
+            className="glass-panel rounded-xl px-3 py-2 flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all group"
+            title="Undo last move"
+          >
+            <RotateCcw size={14} className="group-hover:rotate-[-180deg] transition-transform duration-500" />
+            <span className="hidden md:inline">Undo</span>
+          </button>
+        </div>
+      )}
 
-      <Canvas
-        shadows
-        camera={{ position: [0, 8, 8], fov: 50 }}
-        style={{ background: 'linear-gradient(180deg, #f0f0f5 0%, #e8e8f0 40%, #dde0ea 100%)' }}
-      >
-        <ChessBoard3D
+      {/* Replay mode indicator */}
+      {viewingMoveIndex !== null && (
+        <div className="absolute top-20 left-1/2 -translate-x-1/2 pointer-events-auto z-20">
+          <div className="glass-panel rounded-xl px-4 py-2 flex items-center gap-2 bg-primary/5 border-primary/20">
+            <span className="text-xs font-bold text-primary tracking-wide">📋 Viewing Move {viewingMoveIndex + 1}</span>
+            <button onClick={exitReplay} className="text-xs font-bold text-primary hover:text-primary/80 underline ml-2">
+              Return to game
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Move history panel */}
+      <MoveHistoryPanel
+        moves={moveHistory}
+        viewingMoveIndex={viewingMoveIndex}
+        onMoveClick={viewMove}
+        onExitReplay={exitReplay}
+        canUndo={gameMode === 'pvp' && !checkmatedColor && !timedOutColor && moveHistory.length > 0}
+        onUndo={undoMove}
+      />
           board={board}
           selectedPos={selectedPos}
           validMoves={validMoves}

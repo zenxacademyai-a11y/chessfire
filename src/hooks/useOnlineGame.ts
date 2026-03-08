@@ -61,9 +61,11 @@ export function useOnlineGame() {
       .single();
 
     if (error) {
+      console.error('[Online] Create room error:', error);
       setState(s => ({ ...s, status: 'error', error: 'Failed to create room. Try again.' }));
       return;
     }
+    console.log('[Online] Room created:', roomCode, data.id);
 
     setState({
       status: 'waiting',

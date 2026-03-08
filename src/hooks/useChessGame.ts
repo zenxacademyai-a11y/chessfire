@@ -1,5 +1,8 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { Board, Position, PieceColor, ChessPiece, createInitialBoard, getValidMoves, movePiece, isInCheck, isCheckmate } from '@/utils/chessLogic';
+import { getBestMove } from '@/utils/chessAI';
+
+export type GameMode = 'pvp' | 'pvai';
 
 export interface AnimatingPiece {
   from: [number, number, number];
@@ -8,6 +11,62 @@ export interface AnimatingPiece {
   color: PieceColor;
   startTime: number;
   isKnight: boolean;
+}
+
+function applyMoveResult(
+  newBoard: Board,
+  captured: ChessPiece | null,
+  from: Position,
+  to: Position,
+  currentTurn: PieceColor,
+  setters: {
+    setBoard: (b: Board) => void;
+    setLastMove: (m: { from: Position; to: Position }) => void;
+    setMoveType: (t: 'move' | 'capture' | 'check' | 'checkmate') => void;
+    setCapturedPieces: React.Dispatch<React.SetStateAction<ChessPiece[]>>;
+    setCurrentTurn: (c: PieceColor) => void;
+    setInCheck: (c: PieceColor | null) => void;
+    setCheckmatedColor: (c: PieceColor | null) => void;
+    setKingInCheckPos: (p: Position | null) => void;
+    setSelectedPos: (p: Position | null) => void;
+    setValidMoves: (m: Position[]) => void;
+    setAnimatingPiece: (a: AnimatingPiece | null) => void;
+  }
+) {
+  const { setBoard, setLastMove, setMoveType, setCapturedPieces, setCurrentTurn, setInCheck, setCheckmatedColor, setKingInCheckPos, setSelectedPos, setValidMoves, setAnimatingPiece } = setters;
+  
+  setBoard(newBoard);
+  setAnimatingPiece(null);
+  setLastMove({ from, to });
+
+  const nextTurn: PieceColor = currentTurn === 'fire' ? 'ice' : 'fire';
+
+  if (captured) setCapturedPieces(prev => [...prev, captured]);
+
+  if (isCheckmate(newBoard, nextTurn)) {
+    setMoveType('checkmate');
+    setCheckmatedColor(nextTurn);
+    setInCheck(nextTurn);
+    for (let r = 0; r < 8; r++)
+      for (let c = 0; c < 8; c++)
+        if (newBoard[r][c]?.type === 'king' && newBoard[r][c]?.color === nextTurn)
+          setKingInCheckPos({ row: r, col: c });
+  } else if (isInCheck(newBoard, nextTurn)) {
+    setMoveType('check');
+    setInCheck(nextTurn);
+    for (let r = 0; r < 8; r++)
+      for (let c = 0; c < 8; c++)
+        if (newBoard[r][c]?.type === 'king' && newBoard[r][c]?.color === nextTurn)
+          setKingInCheckPos({ row: r, col: c });
+  } else {
+    setMoveType(captured ? 'capture' : 'move');
+    setInCheck(null);
+    setKingInCheckPos(null);
+  }
+
+  setCurrentTurn(nextTurn);
+  setSelectedPos(null);
+  setValidMoves([]);
 }
 
 export function useChessGame() {
@@ -22,9 +81,39 @@ export function useChessGame() {
   const [checkmatedColor, setCheckmatedColor] = useState<PieceColor | null>(null);
   const [animatingPiece, setAnimatingPiece] = useState<AnimatingPiece | null>(null);
   const [kingInCheckPos, setKingInCheckPos] = useState<Position | null>(null);
+  const [gameMode, setGameMode] = useState<GameMode>('pvai');
+  const [aiThinking, setAiThinking] = useState(false);
+  const aiTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const setters = {
+    setBoard, setLastMove, setMoveType, setCapturedPieces, setCurrentTurn,
+    setInCheck, setCheckmatedColor, setKingInCheckPos, setSelectedPos,
+    setValidMoves, setAnimatingPiece,
+  };
+
+  // Execute a move with animation
+  const executeMove = useCallback((from: Position, to: Position, boardState: Board, turn: PieceColor) => {
+    const movingPiece = boardState[from.row][from.col]!;
+    const fromPos: [number, number, number] = [from.col - 3.5, 0.08, from.row - 3.5];
+    const toPos: [number, number, number] = [to.col - 3.5, 0.08, to.row - 3.5];
+
+    setAnimatingPiece({
+      from: fromPos, to: toPos,
+      type: movingPiece.type, color: movingPiece.color,
+      startTime: Date.now(), isKnight: movingPiece.type === 'knight',
+    });
+
+    const { newBoard, captured } = movePiece(boardState, from, to);
+    const animDuration = movingPiece.type === 'knight' ? 600 : 400;
+
+    setTimeout(() => {
+      applyMoveResult(newBoard, captured, from, to, turn, setters);
+    }, animDuration);
+  }, []);
 
   const handleSquareClick = useCallback((row: number, col: number) => {
-    if (animatingPiece || checkmatedColor) return; // Block input during animation or after checkmate
+    if (animatingPiece || checkmatedColor || aiThinking) return;
+    if (gameMode === 'pvai' && currentTurn === 'ice') return; // Block clicks during AI turn
     
     const piece = board[row][col];
 
@@ -32,62 +121,7 @@ export function useChessGame() {
       const isValid = validMoves.some(m => m.row === row && m.col === col);
       
       if (isValid) {
-        const movingPiece = board[selectedPos.row][selectedPos.col]!;
-        
-        // Start animation
-        const fromPos: [number, number, number] = [selectedPos.col - 3.5, 0.08, selectedPos.row - 3.5];
-        const toPos: [number, number, number] = [col - 3.5, 0.08, row - 3.5];
-        
-        setAnimatingPiece({
-          from: fromPos,
-          to: toPos,
-          type: movingPiece.type,
-          color: movingPiece.color,
-          startTime: Date.now(),
-          isKnight: movingPiece.type === 'knight',
-        });
-
-        // Delay board update for animation
-        const { newBoard, captured } = movePiece(board, selectedPos, { row, col });
-        
-        setTimeout(() => {
-          setBoard(newBoard);
-          setAnimatingPiece(null);
-          setLastMove({ from: selectedPos, to: { row, col } });
-          
-          const nextTurn: PieceColor = currentTurn === 'fire' ? 'ice' : 'fire';
-          
-          if (captured) setCapturedPieces(prev => [...prev, captured]);
-          
-          // Check detection
-          if (isCheckmate(newBoard, nextTurn)) {
-            setMoveType('checkmate');
-            setCheckmatedColor(nextTurn);
-            setInCheck(nextTurn);
-            // Find king position for visual
-            for (let r = 0; r < 8; r++)
-              for (let c = 0; c < 8; c++)
-                if (newBoard[r][c]?.type === 'king' && newBoard[r][c]?.color === nextTurn)
-                  setKingInCheckPos({ row: r, col: c });
-          } else if (isInCheck(newBoard, nextTurn)) {
-            setMoveType('check');
-            setInCheck(nextTurn);
-            for (let r = 0; r < 8; r++)
-              for (let c = 0; c < 8; c++)
-                if (newBoard[r][c]?.type === 'king' && newBoard[r][c]?.color === nextTurn)
-                  setKingInCheckPos({ row: r, col: c });
-          } else {
-            setMoveType(captured ? 'capture' : 'move');
-            setInCheck(null);
-            setKingInCheckPos(null);
-          }
-          
-          setCurrentTurn(nextTurn);
-          setSelectedPos(null);
-          setValidMoves([]);
-        }, movingPiece.type === 'knight' ? 600 : 400);
-        
-        // Clear selection immediately so piece disappears from source
+        executeMove(selectedPos, { row, col }, board, currentTurn);
         setSelectedPos(null);
         setValidMoves([]);
         return;
@@ -108,9 +142,31 @@ export function useChessGame() {
       setSelectedPos({ row, col });
       setValidMoves(getValidMoves(board, { row, col }));
     }
-  }, [board, selectedPos, validMoves, currentTurn, animatingPiece, checkmatedColor]);
+  }, [board, selectedPos, validMoves, currentTurn, animatingPiece, checkmatedColor, gameMode, aiThinking, executeMove]);
+
+  // AI move trigger
+  useEffect(() => {
+    if (gameMode !== 'pvai' || currentTurn !== 'ice' || checkmatedColor || animatingPiece) return;
+    
+    setAiThinking(true);
+    
+    // Small delay so the UI updates first, then compute
+    aiTimeoutRef.current = setTimeout(() => {
+      const bestMove = getBestMove(board, 'ice', 3);
+      
+      if (bestMove) {
+        executeMove(bestMove.from, bestMove.to, board, 'ice');
+      }
+      setAiThinking(false);
+    }, 500);
+
+    return () => {
+      if (aiTimeoutRef.current) clearTimeout(aiTimeoutRef.current);
+    };
+  }, [currentTurn, gameMode, checkmatedColor, board, animatingPiece, executeMove]);
 
   const resetGame = useCallback(() => {
+    if (aiTimeoutRef.current) clearTimeout(aiTimeoutRef.current);
     setBoard(createInitialBoard());
     setSelectedPos(null);
     setValidMoves([]);
@@ -122,11 +178,18 @@ export function useChessGame() {
     setCheckmatedColor(null);
     setAnimatingPiece(null);
     setKingInCheckPos(null);
+    setAiThinking(false);
   }, []);
+
+  const toggleGameMode = useCallback((mode: GameMode) => {
+    setGameMode(mode);
+    resetGame();
+  }, [resetGame]);
 
   return {
     board, selectedPos, validMoves, currentTurn, capturedPieces, lastMove, moveType,
     inCheck, checkmatedColor, animatingPiece, kingInCheckPos,
-    handleSquareClick, resetGame
+    gameMode, aiThinking,
+    handleSquareClick, resetGame, toggleGameMode
   };
 }

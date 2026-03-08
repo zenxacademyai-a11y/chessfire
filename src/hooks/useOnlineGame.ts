@@ -61,9 +61,11 @@ export function useOnlineGame() {
       .single();
 
     if (error) {
+      console.error('[Online] Create room error:', error);
       setState(s => ({ ...s, status: 'error', error: 'Failed to create room. Try again.' }));
       return;
     }
+    console.log('[Online] Room created:', roomCode, data.id);
 
     setState({
       status: 'waiting',
@@ -89,9 +91,11 @@ export function useOnlineGame() {
       .single();
 
     if (fetchError || !room) {
+      console.error('[Online] Join room error:', fetchError, 'room:', room);
       setState(s => ({ ...s, status: 'idle', error: 'Room not found or already full.' }));
       return;
     }
+    console.log('[Online] Found room:', room.id, 'status:', room.status);
 
     // Don't join your own room
     if (room.player_fire === sessionId.current) {
@@ -110,9 +114,11 @@ export function useOnlineGame() {
       .eq('status', 'waiting');
 
     if (updateError) {
+      console.error('[Online] Join update error:', updateError);
       setState(s => ({ ...s, status: 'idle', error: 'Failed to join room.' }));
       return;
     }
+    console.log('[Online] Joined room as ice');
 
     setState({
       status: 'playing',

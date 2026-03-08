@@ -189,7 +189,8 @@ export function useChessGame() {
   const pushMoveOnline = useCallback(async (newBoard: Board, from: Position, to: Position, nextTurn: PieceColor) => {
     if (!onlineConfig) return;
     
-    await supabase
+    console.log('[Game] Pushing move online:', { from, to, nextTurn, roomId: onlineConfig.roomId });
+    const { error } = await supabase
       .from('game_rooms')
       .update({
         board_state: newBoard as unknown as Json,
@@ -197,6 +198,9 @@ export function useChessGame() {
         last_move: { from, to } as unknown as Json,
       })
       .eq('id', onlineConfig.roomId);
+    
+    if (error) console.error('[Game] Push move error:', error);
+    else console.log('[Game] Move pushed successfully');
   }, [onlineConfig]);
 
   const handleSquareClick = useCallback((row: number, col: number) => {
@@ -257,9 +261,17 @@ export function useChessGame() {
         },
         (payload) => {
           const updated = payload.new as any;
+          console.log('[Game] Realtime update received:', { 
+            current_turn: updated.current_turn, 
+            has_last_move: !!updated.last_move, 
+            status: updated.status,
+            myColor: onlineConfig.playerColor,
+            isApplying: isApplyingRemoteMove.current 
+          });
           
           // Detect rematch (opponent reset the room) - board is fresh and no last_move
           if (updated.status === 'playing' && !updated.last_move && updated.current_turn === 'fire' && !isApplyingRemoteMove.current) {
+            console.log('[Game] Rematch detected, resetting');
             resetGame();
             return;
           }
@@ -268,12 +280,9 @@ export function useChessGame() {
           if (updated.current_turn === onlineConfig.playerColor && updated.last_move && !isApplyingRemoteMove.current) {
             isApplyingRemoteMove.current = true;
             const move = updated.last_move as { from: Position; to: Position };
+            console.log('[Game] Applying opponent move:', move);
             
-            // Use the board state from DB to avoid stale ref issues
-            const remoteBoard = updated.board_state as unknown as Board;
             const opponentColor: PieceColor = onlineConfig.playerColor === 'fire' ? 'ice' : 'fire';
-            
-            // Execute the opponent's move with animation on our current local board
             executeMove(move.from, move.to, boardRef.current, opponentColor);
             
             // Reset flag after animation completes
@@ -283,7 +292,9 @@ export function useChessGame() {
           }
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log('[Game] Realtime subscription status:', status);
+      });
 
     return () => {
       supabase.removeChannel(channel);

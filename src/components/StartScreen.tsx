@@ -8,10 +8,17 @@ interface StartScreenProps {
   onStartOnline: (roomId: string, playerColor: 'fire' | 'ice') => void;
 }
 
-function OnlinePanel({ onBack, onStartOnline }: { onBack: () => void; onStartOnline: (roomId: string, playerColor: 'fire' | 'ice') => void }) {
+function OnlinePanel({ onBack, onStartOnline, autoJoinCode }: { onBack: () => void; onStartOnline: (roomId: string, playerColor: 'fire' | 'ice') => void; autoJoinCode?: string | null }) {
   const { status, roomCode, roomId, playerColor, error, createRoom, joinRoom, leaveRoom } = useOnlineGame();
-  const [joinCode, setJoinCode] = useState('');
+  const [joinCode, setJoinCode] = useState(autoJoinCode || '');
   const [copied, setCopied] = useState(false);
+  const [autoJoined, setAutoJoined] = useState(false);
+
+  // Auto-join if code provided via URL
+  if (autoJoinCode && !autoJoined && status === 'idle') {
+    setAutoJoined(true);
+    joinRoom(autoJoinCode);
+  }
 
   const shareUrl = useMemo(() => {
     if (!roomCode) return '';

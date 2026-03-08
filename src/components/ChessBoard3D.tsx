@@ -119,18 +119,16 @@ function RealisticFire() {
   );
 }
 
-// Realistic ice/snow — snowflakes falling, ice crystals, frost mist
+// Lightweight ice/snow effect — reduced particles
 function RealisticIceSnow() {
-  // Snowflakes — gently falling
   const snowflakes = useMemo(() =>
-    Array.from({ length: 80 }, () => ({
+    Array.from({ length: 25 }, () => ({
       x: (Math.random() - 0.5) * 12,
       z: -3 - Math.random() * 5,
       y: Math.random() * 5,
       speed: 0.3 + Math.random() * 0.7,
       offset: Math.random() * Math.PI * 2,
       size: 0.015 + Math.random() * 0.035,
-      drift: Math.random() * 0.5,
     })), []);
 
   const snowRef = useRef<THREE.InstancedMesh>(null);
@@ -143,98 +141,24 @@ function RealisticIceSnow() {
       const fallY = p.y - (t % 5) * 0.8;
       const y = fallY < -0.5 ? p.y : fallY;
       dummy.position.set(
-        p.x + Math.sin(t * 0.8 + p.offset) * p.drift,
+        p.x + Math.sin(t * 0.8) * 0.3,
         y,
-        p.z + Math.cos(t * 0.5 + p.offset) * 0.3
+        p.z
       );
-      const twinkle = 0.7 + Math.sin(t * 4 + p.offset * 3) * 0.3;
-      dummy.scale.setScalar(p.size * twinkle);
-      dummy.rotation.set(t * 0.5, t * 0.3, t * 0.7);
+      dummy.scale.setScalar(p.size);
       dummy.updateMatrix();
       snowRef.current!.setMatrixAt(i, dummy.matrix);
     });
     snowRef.current.instanceMatrix.needsUpdate = true;
   });
 
-  // Ice crystals — static-ish floating shards
-  const crystals = useMemo(() =>
-    Array.from({ length: 25 }, () => ({
-      x: (Math.random() - 0.5) * 10,
-      z: -3.5 - Math.random() * 3,
-      y: 0.5 + Math.random() * 2.5,
-      speed: 0.1 + Math.random() * 0.3,
-      offset: Math.random() * Math.PI * 2,
-      size: 0.02 + Math.random() * 0.04,
-    })), []);
-
-  const crystalRef = useRef<THREE.InstancedMesh>(null);
-
-  useFrame((state) => {
-    if (!crystalRef.current) return;
-    crystals.forEach((p, i) => {
-      const t = state.clock.elapsedTime * p.speed + p.offset;
-      dummy.position.set(
-        p.x + Math.sin(t) * 0.2,
-        p.y + Math.sin(t * 2) * 0.15,
-        p.z + Math.cos(t * 0.7) * 0.15
-      );
-      dummy.scale.setScalar(p.size);
-      dummy.rotation.set(t * 0.3, t * 0.5, t * 0.2);
-      dummy.updateMatrix();
-      crystalRef.current!.setMatrixAt(i, dummy.matrix);
-    });
-    crystalRef.current.instanceMatrix.needsUpdate = true;
-  });
-
-  // Frost mist — ground-level haze
-  const mist = useMemo(() =>
-    Array.from({ length: 15 }, () => ({
-      x: (Math.random() - 0.5) * 10,
-      z: -3 - Math.random() * 4,
-      speed: 0.05 + Math.random() * 0.15,
-      offset: Math.random() * Math.PI * 2,
-      size: 0.15 + Math.random() * 0.2,
-    })), []);
-
-  const mistRef = useRef<THREE.InstancedMesh>(null);
-
-  useFrame((state) => {
-    if (!mistRef.current) return;
-    mist.forEach((p, i) => {
-      const t = state.clock.elapsedTime * p.speed + p.offset;
-      dummy.position.set(
-        p.x + Math.sin(t) * 0.8,
-        0.2 + Math.sin(t * 0.5) * 0.1,
-        p.z + Math.cos(t * 0.3) * 0.5
-      );
-      dummy.scale.setScalar(p.size);
-      dummy.updateMatrix();
-      mistRef.current!.setMatrixAt(i, dummy.matrix);
-    });
-    mistRef.current.instanceMatrix.needsUpdate = true;
-  });
-
   return (
     <group>
-      {/* Snowflakes — white */}
       <instancedMesh ref={snowRef} args={[undefined, undefined, snowflakes.length]}>
         <octahedronGeometry args={[1, 0]} />
         <meshBasicMaterial color="#ffffff" transparent opacity={0.85} />
       </instancedMesh>
-      {/* Ice crystals — light blue, shiny */}
-      <instancedMesh ref={crystalRef} args={[undefined, undefined, crystals.length]}>
-        <octahedronGeometry args={[1, 0]} />
-        <meshStandardMaterial color="#aae8ff" emissive="#66ccff" emissiveIntensity={0.5} transparent opacity={0.7} metalness={0.9} roughness={0.1} />
-      </instancedMesh>
-      {/* Frost mist */}
-      <instancedMesh ref={mistRef} args={[undefined, undefined, mist.length]}>
-        <sphereGeometry args={[1, 8, 8]} />
-        <meshBasicMaterial color="#cceeff" transparent opacity={0.08} />
-      </instancedMesh>
-      {/* Cold blue light */}
       <pointLight position={[0, 2, -5]} color="#88ccff" intensity={2} distance={10} />
-      <pointLight position={[-3, 0.5, -4.5]} color="#aaddff" intensity={1} distance={6} />
-      <pointLight position={[3, 0.5, -4.5]} color="#66bbff" intensity={1} distance={6} />
     </group>
   );
 }

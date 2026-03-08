@@ -123,6 +123,7 @@ const Index = () => {
         onExitReplay={exitReplay}
         canUndo={gameMode === 'pvp' && !checkmatedColor && !timedOutColor && moveHistory.length > 0}
         onUndo={undoMove}
+      />
 
       <Canvas
         shadows

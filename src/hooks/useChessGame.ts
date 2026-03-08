@@ -435,6 +435,17 @@ export function useChessGame() {
     if (lastMove) setHintMove(null);
   }, [lastMove]);
 
+  const claimVictory = useCallback(async () => {
+    if (gameMode !== 'online' || !onlineConfig) return;
+    const opponentColor: PieceColor = onlineConfig.playerColor === 'fire' ? 'ice' : 'fire';
+    setCheckmatedColor(opponentColor);
+    // Update room status
+    await supabase
+      .from('game_rooms')
+      .update({ status: 'finished', winner: onlineConfig.playerColor })
+      .eq('id', onlineConfig.roomId);
+  }, [gameMode, onlineConfig]);
+
   return {
     board: displayBoard, selectedPos, validMoves, currentTurn, capturedPieces, lastMove, moveType,
     inCheck, checkmatedColor, animatingPiece, kingInCheckPos,
@@ -442,6 +453,6 @@ export function useChessGame() {
     hintMove, hintLoading, moveHistory, viewingMoveIndex,
     onlineConfig, opponentDisconnected,
     handleSquareClick, resetGame, toggleGameMode, setAiDifficulty, getHint,
-    undoMove, viewMove, exitReplay, startOnlineGame,
+    undoMove, viewMove, exitReplay, startOnlineGame, claimVictory,
   };
 }

@@ -170,6 +170,11 @@ export default function StartScreen({ onStart, onStartOnline, onStartTournament 
     setTimeout(() => onStartOnline(roomId, playerColor), 800);
   };
 
+  const handleStartTournament = (size: 4 | 8, names: string[]) => {
+    setExiting(true);
+    setTimeout(() => onStartTournament(size, names), 800);
+  };
+
   // Check URL for join parameter on mount
   const [initialJoinCode] = useState(() => {
     const params = new URLSearchParams(window.location.search);

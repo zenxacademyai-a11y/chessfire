@@ -47,6 +47,16 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        fire: {
+          DEFAULT: "hsl(var(--fire))",
+          glow: "hsl(var(--fire-glow))",
+          deep: "hsl(var(--fire-deep))",
+        },
+        ice: {
+          DEFAULT: "hsl(var(--ice))",
+          glow: "hsl(var(--ice-glow))",
+          deep: "hsl(var(--ice-deep))",
+        },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
           foreground: "hsl(var(--sidebar-foreground))",

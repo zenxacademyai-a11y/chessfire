@@ -31,11 +31,12 @@ const Index = () => {
     if (lastMove && lastMove !== prevMoveRef.current) {
       if (moveType === 'checkmate') playCheckmate();
       else if (moveType === 'check') playCheck();
-      else if (moveType === 'capture') playCapture();
+      else if (moveType === 'capture' && lastMovedPieceType) playPieceCapture(lastMovedPieceType);
+      else if (lastMovedPieceType) playPieceMove(lastMovedPieceType);
       else playMove();
     }
     prevMoveRef.current = lastMove;
-  }, [lastMove, moveType]);
+  }, [lastMove, moveType, lastMovedPieceType]);
 
   useEffect(() => {
     if (selectedPos) playSelect();

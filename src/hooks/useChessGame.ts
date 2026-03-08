@@ -67,6 +67,7 @@ export function useChessGame() {
   const [boardHistory, setBoardHistory] = useState<BoardSnapshot[]>([]);
   const [viewingMoveIndex, setViewingMoveIndex] = useState<number | null>(null);
   const [onlineConfig, setOnlineConfig] = useState<OnlineConfig | null>(null);
+  const [opponentDisconnected, setOpponentDisconnected] = useState(false);
   const aiTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isApplyingRemoteMove = useRef(false);
 
